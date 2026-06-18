@@ -4,6 +4,27 @@ Kraken VPN is a sleek, modern, multi-profile desktop VPN client for Windows buil
 
 ---
 
+## 📸 Visual Preview & Product Narration
+
+| **Sleek Connection Dashboard** | **Unified Settings & Configuration** |
+|:---:|:---:|
+| ![Dashboard](./screenshot/dashboard.png) | ![Settings](./screenshot/settings.png) |
+| <p align="center">Monitor and connect to active VPN tunnels, track real-time upload/download speeds, and check global tunnel status.</p> | <p align="center">Configure user credentials, network interfaces, server certificates, custom endpoints, and general app preferences.</p> |
+
+| **Light Weight VPN** |
+|:---:|
+| ![Resource Usage](./screenshot/resource-usage.png) |
+| <p align="center">An light weight VPN client for any OpenVPN and OpenConnect protocols.</p> |
+
+### 🦑 Why Kraken VPN?
+Most corporate VPN clients are heavy, slow, or lack transparency. Kraken VPN was built as a lightweight, developer-first wrapper to bring order, speed, and premium aesthetics to VPN connections:
+* **True Multi-Protocol Support**: Bring OpenVPN (`.ovpn`) profiles and OpenConnect endpoints together under one elegant window.
+* **Telemetry at a Glance**: Real-time traffic rate tracking (scaling dynamically from `Kbps` to `Mbps`) helps monitor active downloads and connection health.
+* **Instant Diagnostics**: The raw stdout/stderr streams of `openvpn` and `openconnect` are piped directly into an interactive dark-themed console, eliminating guess-work during connection issues.
+* **Credential Profile Management**: Test and switch between profiles (e.g. Work VPN vs. Private Server) with one-click credential storage.
+
+---
+
 ## ✨ Features
 
 - **Multi-Protocol Support**: Seamless integration for OpenVPN (`.ovpn` profiles) and OpenConnect protocols.
