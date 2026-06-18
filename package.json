@@ -14,7 +14,7 @@
     "openvpn"
   ],
   "author": "Antigravity",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3"
