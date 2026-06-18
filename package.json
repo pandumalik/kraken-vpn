@@ -1,0 +1,44 @@
+{
+  "name": "kraken-vpn",
+  "version": "1.0.0",
+  "description": "Sleek, multi-profile VPN Client for Windows built with Electron.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "keywords": [
+    "vpn",
+    "electron",
+    "windows",
+    "openvpn"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.krakenvpn.app",
+    "productName": "KrakenVPN",
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png",
+      "src/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.png",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
