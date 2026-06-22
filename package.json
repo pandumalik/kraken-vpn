@@ -13,7 +13,7 @@
     "windows",
     "openvpn"
   ],
-  "author": "Antigravity",
+  "author": "Pandu Malik",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "electron": "^31.0.0",
