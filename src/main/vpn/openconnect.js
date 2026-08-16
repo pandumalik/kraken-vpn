@@ -4,6 +4,7 @@ const fs = require('fs');
 const { spawn, exec } = require('child_process');
 const { activeConnections, cleanupConnection } = require('./manager');
 const { loadData, saveData, appendLog } = require('../store');
+const { checkIsAdmin } = require('../utils');
 
 function getInterfaceStats(interfaceName) {
   return new Promise((resolve) => {
@@ -41,6 +42,41 @@ function getInterfaceStats(interfaceName) {
   });
 }
 
+function isCertPrompt(str) {
+  if (!str) return false;
+  const lower = str.toLowerCase();
+  return (
+    lower.includes("enter 'yes' to accept") ||
+    lower.includes("confirm certificate") ||
+    lower.includes("validation failed") ||
+    lower.includes("accept certificate") ||
+    lower.includes("accept this certificate") ||
+    lower.includes("do you want to accept") ||
+    lower.includes("trust this certificate") ||
+    lower.includes("server certificate verify failed") ||
+    lower.includes("signer not found") ||
+    lower.includes("certificate verify failed") ||
+    lower.includes("(yes/no)") ||
+    lower.includes("(y/n)") ||
+    lower.includes("[y/n]") ||
+    lower.includes("accept always")
+  );
+}
+
+function saveDetectedServerCert(profileId, pin) {
+  try {
+    const currentData = loadData();
+    const profToUpdate = currentData.profiles.find(p => p.id === profileId);
+    if (profToUpdate && profToUpdate.servercert !== pin) {
+      profToUpdate.servercert = pin;
+      saveData(currentData);
+      console.log(`[OpenConnect] Auto-saved servercert pin (${pin}) for profile ${profileId}`);
+    }
+  } catch (err) {
+    console.error("Error saving parsed servercert:", err);
+  }
+}
+
 function connectOpenConnect(profile, provider, settings, mainWindow) {
   const openconnectPath = settings.openconnectPath || 'openconnect.exe';
   let resolvedPath = openconnectPath;
@@ -75,6 +111,23 @@ function connectOpenConnect(profile, provider, settings, mainWindow) {
       '--no-dtls'
     ];
 
+    // Explicitly locate vpnc-script on Windows
+    if (process.platform === 'win32') {
+      const dirName = path.dirname(resolvedPath);
+      const candidateScripts = [
+        path.join(dirName, 'vpnc-script-win.js'),
+        path.join(dirName, 'vpnc-script.js'),
+        'C:\\Program Files\\OpenConnect-GUI\\vpnc-script-win.js',
+        'C:\\Program Files\\OpenConnect-GUI\\vpnc-script.js',
+        path.join(process.cwd(), 'vpnc-script-win.js'),
+        path.join(process.cwd(), 'vpnc-script.js')
+      ];
+      const foundScript = candidateScripts.find(s => fs.existsSync(s));
+      if (foundScript) {
+        args.push('--script', foundScript);
+      }
+    }
+
     const activePin = serverCertPin || profile.servercert;
     if (activePin) {
       args.push('--servercert', activePin);
@@ -86,6 +139,16 @@ function connectOpenConnect(profile, provider, settings, mainWindow) {
 
     if (profile.interfaceName) {
       args.push(`--interface=${profile.interfaceName}`);
+    }
+
+    const isAdmin = checkIsAdmin();
+    if (!isAdmin && mainWindow) {
+      mainWindow.webContents.send('vpn-log-output', {
+        profileId: profile.id,
+        profileName: profile.name,
+        message: "[SYSTEM WARNING] KrakenVPN is NOT running as Administrator! Virtual network adapter configuration and IP route creation will fail unless KrakenVPN is launched as Administrator.",
+        timestamp: new Date().toISOString()
+      });
     }
 
     let child;
@@ -125,8 +188,8 @@ function connectOpenConnect(profile, provider, settings, mainWindow) {
     }
 
     let hasReportedConnected = false;
-    let certAccepted = false;
     let passwordSent = false;
+    let lastCertSentTime = 0;
     let detectedServerCert = null;
 
     let lineBuffer = '';
@@ -155,16 +218,18 @@ function connectOpenConnect(profile, provider, settings, mainWindow) {
         const lowerLine = trimmed.toLowerCase();
 
         // A. Parse server certificate pin if verification failed
-        const pinMatch = trimmed.match(/pin-sha256:([a-zA-Z0-9+/=]+)/);
+        const pinMatch = trimmed.match(/pin-sha256:([a-zA-Z0-9+/=]+)/i);
         if (pinMatch) {
           detectedServerCert = 'pin-sha256:' + pinMatch[1];
           console.log(`[OpenConnect] Auto-detected certificate fingerprint: ${detectedServerCert}`);
+          saveDetectedServerCert(profile.id, detectedServerCert);
+          profile.servercert = detectedServerCert;
         }
 
         // B. Handle Certificate check prompt:
-        if (lowerLine.includes("enter 'yes' to accept") || lowerLine.includes("confirm certificate") || lowerLine.includes("validation failed")) {
-          if (!certAccepted) {
-            certAccepted = true;
+        if (isCertPrompt(trimmed)) {
+          if (Date.now() - lastCertSentTime > 500) {
+            lastCertSentTime = Date.now();
             child.stdin.write("yes\n");
             console.log(`[OpenConnect] Automatically accepted certificate warning.`);
             if (mainWindow) {
@@ -362,20 +427,49 @@ function connectOpenConnect(profile, provider, settings, mainWindow) {
         }
       }
 
-      // Also inspect remaining buffer for interactive password prompt (non-newline terminated)
-      const trimmedBuffer = lineBuffer.trim().toLowerCase();
-      if (trimmedBuffer.includes("password:") || trimmedBuffer.includes("enter password")) {
-        if (!passwordSent) {
-          passwordSent = true;
-          child.stdin.write((profile.password || '') + "\n");
-          console.log(`[OpenConnect] Automatically entered password from prompt-buffer.`);
-          if (mainWindow) {
-            mainWindow.webContents.send('vpn-log-output', {
-              profileId: profile.id,
-              profileName: profile.name,
-              message: "[SYSTEM] Automatically entered password from prompt-buffer.",
-              timestamp: new Date().toISOString()
-            });
+      // Also inspect remaining buffer for interactive prompts or certificate fingerprints (non-newline terminated)
+      const trimmedBuffer = lineBuffer.trim();
+      if (trimmedBuffer) {
+        if (!detectedServerCert) {
+          const pinMatchBuf = trimmedBuffer.match(/pin-sha256:([a-zA-Z0-9+/=]+)/i);
+          if (pinMatchBuf) {
+            detectedServerCert = 'pin-sha256:' + pinMatchBuf[1];
+            console.log(`[OpenConnect] Auto-detected certificate fingerprint from prompt-buffer: ${detectedServerCert}`);
+            saveDetectedServerCert(profile.id, detectedServerCert);
+            profile.servercert = detectedServerCert;
+          }
+        }
+
+        if (isCertPrompt(trimmedBuffer)) {
+          if (Date.now() - lastCertSentTime > 500) {
+            lastCertSentTime = Date.now();
+            child.stdin.write("yes\n");
+            console.log(`[OpenConnect] Automatically accepted certificate warning from prompt-buffer.`);
+            if (mainWindow) {
+              mainWindow.webContents.send('vpn-log-output', {
+                profileId: profile.id,
+                profileName: profile.name,
+                message: "[SYSTEM] Automatically accepted certificate warning from prompt-buffer.",
+                timestamp: new Date().toISOString()
+              });
+            }
+          }
+        }
+
+        const lowerBuffer = trimmedBuffer.toLowerCase();
+        if (lowerBuffer.includes("password:") || lowerBuffer.includes("enter password")) {
+          if (!passwordSent) {
+            passwordSent = true;
+            child.stdin.write((profile.password || '') + "\n");
+            console.log(`[OpenConnect] Automatically entered password from prompt-buffer.`);
+            if (mainWindow) {
+              mainWindow.webContents.send('vpn-log-output', {
+                profileId: profile.id,
+                profileName: profile.name,
+                message: "[SYSTEM] Automatically entered password from prompt-buffer.",
+                timestamp: new Date().toISOString()
+              });
+            }
           }
         }
       }

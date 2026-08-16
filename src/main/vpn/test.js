@@ -2,6 +2,27 @@ const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
 
+function isCertPrompt(str) {
+  if (!str) return false;
+  const lower = str.toLowerCase();
+  return (
+    lower.includes("enter 'yes' to accept") ||
+    lower.includes("confirm certificate") ||
+    lower.includes("validation failed") ||
+    lower.includes("accept certificate") ||
+    lower.includes("accept this certificate") ||
+    lower.includes("do you want to accept") ||
+    lower.includes("trust this certificate") ||
+    lower.includes("server certificate verify failed") ||
+    lower.includes("signer not found") ||
+    lower.includes("certificate verify failed") ||
+    lower.includes("(yes/no)") ||
+    lower.includes("(y/n)") ||
+    lower.includes("[y/n]") ||
+    lower.includes("accept always")
+  );
+}
+
 function terminateProcess(child) {
   if (!child) return;
   try {
@@ -77,7 +98,7 @@ function testOpenConnect(config, settings) {
     }, 8000);
 
     let passwordSent = false;
-    let certAccepted = false;
+    let lastCertSentTime = 0;
 
     const handleOutput = (chunk) => {
       const text = chunk.toString();
@@ -85,7 +106,7 @@ function testOpenConnect(config, settings) {
       const lowerOutput = output.toLowerCase();
 
       // Check certificate failure fingerprint
-      const pinMatch = text.match(/pin-sha256:([a-zA-Z0-9+/=]+)/);
+      const pinMatch = text.match(/pin-sha256:([a-zA-Z0-9+/=]+)/i);
       if (pinMatch) {
         detectedPin = 'pin-sha256:' + pinMatch[1];
       }
@@ -132,9 +153,9 @@ function testOpenConnect(config, settings) {
       }
 
       // Check validation failure prompt without retry
-      if (lowerOutput.includes("enter 'yes' to accept") || lowerOutput.includes("confirm certificate") || lowerOutput.includes("validation failed")) {
-        if (!certAccepted) {
-          certAccepted = true;
+      if (isCertPrompt(text) || isCertPrompt(output)) {
+        if (Date.now() - lastCertSentTime > 500) {
+          lastCertSentTime = Date.now();
           child.stdin.write('yes\n');
         }
       }
