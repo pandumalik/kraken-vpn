@@ -1,10 +1,6 @@
 name: Build Windows Executable & Release
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
@@ -25,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Resolve Version & Git Tag
         id: version_step

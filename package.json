@@ -30,8 +30,7 @@
     ],
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ],
       "icon": "icon.png",
       "requestedExecutionLevel": "requireAdministrator"
