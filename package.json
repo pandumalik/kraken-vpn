@@ -1,6 +1,6 @@
 {
   "name": "kraken-vpn",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sleek, multi-profile VPN Client for Windows built with Electron.",
   "main": "main.js",
   "scripts": {
