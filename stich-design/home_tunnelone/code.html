@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — TunnelOne</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#156E42',
+        'on-success': '#FFFFFF',
+        'success-container': '#E4F5EC',
+        'on-success-container': '#0B4327',
+        'warning': '#B45309',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FEF3C7',
+        'on-warning-container': '#78350F',
+        'light-primary': '#00452A',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#1B5E3F',
+        'light-on-primary-container': '#93D5AE',
+        'light-secondary': '#A04013',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FF8755',
+        'light-on-secondary-container': '#6F2500',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F8FAF5',
+        'light-on-background': '#191C1A',
+        'light-surface': '#F8FAF5',
+        'light-surface-dim': '#D8DBD6',
+        'light-surface-bright': '#F8FAF5',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F2F4EF',
+        'light-surface-container': '#ECEFEA',
+        'light-surface-container-high': '#E6E9E4',
+        'light-surface-container-highest': '#E1E3DE',
+        'light-on-surface': '#191C1A',
+        'light-surface-variant': '#DBE5DC',
+        'light-on-surface-variant': '#404942',
+        'light-outline': '#707972',
+        'light-outline-variant': '#BFC9C0',
+        'light-inverse-surface': '#2E312E',
+        'light-inverse-on-surface': '#EFF1ED',
+        'light-inverse-primary': '#93D5AE',
+        'dark-primary': '#93D5AE',
+        'dark-on-primary': '#003822',
+        'dark-primary-container': '#1B5E3F',
+        'dark-on-primary-container': '#93D5AE',
+        'dark-secondary': '#FFB599',
+        'dark-on-secondary': '#5A1C00',
+        'dark-secondary-container': '#872E00',
+        'dark-on-secondary-container': '#FFA682',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#111412',
+        'dark-on-background': '#E1E3DE',
+        'dark-surface': '#111412',
+        'dark-surface-dim': '#111412',
+        'dark-surface-bright': '#363A37',
+        'dark-surface-container-lowest': '#0B0F0C',
+        'dark-surface-container-low': '#191C1A',
+        'dark-surface-container': '#1D201E',
+        'dark-surface-container-high': '#272B28',
+        'dark-surface-container-highest': '#323633',
+        'dark-on-surface': '#E1E3DE',
+        'dark-surface-variant': '#404942',
+        'dark-on-surface-variant': '#BFC9C0',
+        'dark-outline': '#8A938B',
+        'dark-outline-variant': '#404942',
+        'dark-inverse-surface': '#E1E3DE',
+        'dark-inverse-on-surface': '#2E312E',
+        'dark-inverse-primary': '#296A4A',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '32px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'body': ['"Commissioner"', 'sans-serif'],
+        'label': ['"Commissioner"', 'sans-serif'],
+        'mono': ['"Reddit Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-md': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-md-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['24px', { lineHeight: '32px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'headline-md': ['18px', { lineHeight: '26px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['15px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.25px', fontWeight: '500' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '180ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Commissioner:wght@400;500;600&amp;family=Reddit+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-light-surface text-light-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Left Navigation Rail -->
+    <aside class="w-[220px] shrink-0 min-h-[1024px] bg-light-surface-container-low border-r border-light-outline-variant flex flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex items-center gap-2.5 px-2.5 pt-2">
+          <div class="w-7 h-7 rounded bg-light-primary text-light-on-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">vpn_lock</span>
+          </div>
+          <span data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">TunnelOne</span>
+        </div>
+
+        <nav aria-label="Primary navigation" class="flex flex-col gap-1">
+          <a href="../home/Home.html" aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">home</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Home</span>
+          </a>
+          <a href="../monitoring/Monitoring.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">monitoring</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Monitoring</span>
+          </a>
+          <a href="../logs/Logs.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">terminal</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Logs</span>
+          </a>
+          <a href="../settings/Settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">settings</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="pt-4 border-t border-light-outline-variant px-2.5">
+        <div class="flex items-center gap-2">
+          <span id="rail-status-dot" data-component-id="badge-dot" data-component-type="badge" data-component-variant="dot" role="status" aria-label="Tunnel active" class="inline-block w-2.5 h-2.5 rounded-full bg-success shrink-0"></span>
+          <span id="rail-status-label" data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface">Connected</span>
+        </div>
+        <p id="rail-status-uptime" data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums mt-1">01:42:18 • 10.24.8.14</p>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 min-h-[1024px] p-8" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="max-w-4xl mx-auto flex flex-col gap-8">
+        <!-- Page Header -->
+        <header class="flex items-center justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-light-on-surface">Home</h1>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Load any Palo Alto, Fortinet, or OpenVPN profile and manage your active tunnel.</p>
+          </div>
+          <!-- COMPONENT: button-with-icon -->
+          <button id="import-profile-btn" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-light-primary text-light-on-primary hover:bg-light-primary-container transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2 shrink-0">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">upload_file</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Import profile</span>
+          </button>
+        </header>
+
+        <!-- Active Tunnel Hero Card -->
+        <section aria-labelledby="active-tunnel-heading">
+          <!-- COMPONENT: card-action -->
+          <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md p-6 flex flex-col gap-6">
+            <header class="flex items-start justify-between gap-4">
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center gap-2.5">
+                  <span id="hero-status-badge" data-component-id="badge-success" data-component-type="badge" data-component-variant="success" role="status" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-success-container text-on-success-container">
+                    <span class="w-2 h-2 rounded-full bg-success" aria-hidden="true"></span>
+                    <span data-design-text-token="label-md" class="font-body text-label-md">Connected</span>
+                  </span>
+                  <span id="hero-protocol-badge" data-component-id="badge-protocol" data-component-type="badge" data-component-variant="status" role="status" class="inline-flex items-center px-2 py-0.5 rounded-sm bg-light-surface-container text-light-on-surface-variant border border-light-outline-variant">
+                    <span data-design-text-token="label-md" class="font-body text-label-md">Palo Alto GlobalProtect</span>
+                  </span>
+                </div>
+                <h2 id="active-tunnel-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface mt-1">Corp GlobalProtect US-West</h2>
+                <p id="hero-gateway" data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">gp-west.acme-corp.net</p>
+              </div>
+
+              <!-- COMPONENT: button-secondary -->
+              <button id="hero-action-btn" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-light-surface-container-lowest text-light-on-surface border border-light-outline-variant hover:bg-light-surface-container-low transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2 shrink-0">
+                <span data-design-text-token="label-lg" class="font-body text-label-lg">Disconnect</span>
+              </button>
+            </header>
+
+            <footer class="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-5 border-t border-light-outline-variant">
+              <div class="flex flex-col gap-1">
+                <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Virtual IP</span>
+                <span id="hero-ip" data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">10.24.8.14</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Duration</span>
+                <span id="hero-duration" data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">01:42:18</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Download</span>
+                <span id="hero-down" data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">18.4 Mbps</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Upload</span>
+                <span id="hero-up" data-design-text-token="mono-md" class="font-mono text-mono-md text-light-on-surface tabular-nums">4.2 Mbps</span>
+              </div>
+            </footer>
+          </article>
+        </section>
+
+        <!-- Saved Profiles Table -->
+        <section aria-labelledby="profiles-heading" class="flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-4">
+            <h2 id="profiles-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Saved profiles</h2>
+            <span id="profile-count" data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">4 profiles loaded</span>
+          </div>
+
+          <!-- COMPONENT: table-standard -->
+          <div data-component-id="table-standard" data-component-type="table" data-component-variant="standard" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md overflow-hidden">
+            <table class="w-full border-collapse text-left">
+              <thead class="bg-light-surface-container-low border-b border-light-outline-variant">
+                <tr>
+                  <th scope="col" class="px-5 py-3">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Profile</span>
+                  </th>
+                  <th scope="col" class="px-5 py-3">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Protocol</span>
+                  </th>
+                  <th scope="col" class="px-5 py-3">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Gateway</span>
+                  </th>
+                  <th scope="col" class="px-5 py-3 text-right">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Action</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="profiles-tbody" class="divide-y divide-light-outline-variant">
+                <tr class="bg-light-surface-container-low/50">
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Corp GlobalProtect US-West</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Palo Alto</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">gp-west.acme-corp.net</span>
+                  </td>
+                  <td class="px-5 py-4 text-right">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-success">Active</span>
+                  </td>
+                </tr>
+                <tr class="hover:bg-light-surface-container-low transition-colors duration-state-change ease-state-change">
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">FortiClient HQ Gateway</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Fortinet</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">sslvpn.acme-corp.net:10443</span>
+                  </td>
+                  <td class="px-5 py-4 text-right">
+                    <button type="button" data-profile="FortiClient HQ Gateway" data-protocol="Fortinet FortiClient" data-gateway="sslvpn.acme-corp.net:10443" data-ip="172.18.4.22" class="connect-row-btn inline-flex items-center justify-center px-3 py-1.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant hover:bg-light-surface-container transition-colors duration-state-change ease-state-change">
+                      <span data-design-text-token="label-md" class="font-body text-label-md">Connect</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-light-surface-container-low transition-colors duration-state-change ease-state-change">
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Staging Cluster EU-Central</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">OpenVPN</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">eu-vpn.acme-corp.net:1194</span>
+                  </td>
+                  <td class="px-5 py-4 text-right">
+                    <button type="button" data-profile="Staging Cluster EU-Central" data-protocol="OpenVPN (UDP)" data-gateway="eu-vpn.acme-corp.net:1194" data-ip="10.88.12.9" class="connect-row-btn inline-flex items-center justify-center px-3 py-1.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant hover:bg-light-surface-container transition-colors duration-state-change ease-state-change">
+                      <span data-design-text-token="label-md" class="font-body text-label-md">Connect</span>
+                    </button>
+                  </td>
+                </tr>
+                <tr class="hover:bg-light-surface-container-low transition-colors duration-state-change ease-state-change">
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">DR Failover Tunnel</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Palo Alto</span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">gp-dr.acme-corp.net</span>
+                  </td>
+                  <td class="px-5 py-4 text-right">
+                    <button type="button" data-profile="DR Failover Tunnel" data-protocol="Palo Alto GlobalProtect" data-gateway="gp-dr.acme-corp.net" data-ip="10.25.1.18" class="connect-row-btn inline-flex items-center justify-center px-3 py-1.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant hover:bg-light-surface-container transition-colors duration-state-change ease-state-change">
+                      <span data-design-text-token="label-md" class="font-body text-label-md">Connect</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Import Profile Modal (hidden by default) -->
+  <div id="import-modal" class="hidden fixed inset-0 z-50 bg-light-on-surface/30 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+    <div class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md w-full max-w-md p-6 flex flex-col gap-5">
+      <div class="flex items-center justify-between">
+        <h3 id="import-modal-title" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Import VPN profile</h3>
+        <button id="close-modal-btn" type="button" aria-label="Close modal" class="inline-flex items-center justify-center w-8 h-8 rounded text-light-on-surface-variant hover:bg-light-surface-container-low">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <div class="border border-dashed border-light-outline-variant rounded-md p-6 bg-light-surface-container-low text-center flex flex-col items-center gap-2">
+        <span class="material-symbols-outlined text-[28px] text-light-primary">upload_file</span>
+        <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface">Drop a profile file or browse</p>
+        <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Supports .ovpn, .conf, Palo Alto XML, and FortiClient configs</p>
+      </div>
+      <div class="flex items-center justify-end gap-3">
+        <button id="cancel-modal-btn" type="button" class="px-4 py-2 rounded border border-light-outline-variant text-light-on-surface hover:bg-light-surface-container-low">
+          <span data-design-text-token="label-lg" class="font-body text-label-lg">Cancel</span>
+        </button>
+        <button id="confirm-import-btn" type="button" class="px-4 py-2 rounded bg-light-primary text-light-on-primary hover:bg-light-primary-container">
+          <span data-design-text-token="label-lg" class="font-body text-label-lg">Load sample profile</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const importBtn = document.getElementById('import-profile-btn');
+      const modal = document.getElementById('import-modal');
+      const closeBtn = document.getElementById('close-modal-btn');
+      const cancelBtn = document.getElementById('cancel-modal-btn');
+      const confirmBtn = document.getElementById('confirm-import-btn');
+      const heroActionBtn = document.getElementById('hero-action-btn');
+      const heroHeading = document.getElementById('active-tunnel-heading');
+      const heroGateway = document.getElementById('hero-gateway');
+      const heroProtocol = document.getElementById('hero-protocol-badge');
+      const heroIp = document.getElementById('hero-ip');
+
+      function closeModal() {
+        modal.classList.add('hidden');
+      }
+
+      importBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+      closeBtn.addEventListener('click', closeModal);
+      cancelBtn.addEventListener('click', closeModal);
+      confirmBtn.addEventListener('click', closeModal);
+
+      document.querySelectorAll('.connect-row-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          heroHeading.textContent = btn.dataset.profile;
+          heroGateway.textContent = btn.dataset.gateway;
+          heroProtocol.querySelector('span').textContent = btn.dataset.protocol;
+          heroIp.textContent = btn.dataset.ip;
+        });
+      });
+
+      let connected = true;
+      heroActionBtn.addEventListener('click', () => {
+        connected = !connected;
+        const label = heroActionBtn.querySelector('span');
+        const statusBadge = document.getElementById('hero-status-badge');
+        if (connected) {
+          label.textContent = 'Disconnect';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-success-container text-on-success-container';
+          statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-success" aria-hidden="true"></span><span data-design-text-token="label-md" class="font-body text-label-md">Connected</span>';
+        } else {
+          label.textContent = 'Connect';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-light-surface-container text-light-on-surface-variant border border-light-outline-variant';
+          statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-light-outline" aria-hidden="true"></span><span data-design-text-token="label-md" class="font-body text-label-md">Disconnected</span>';
+        }
+      });
+    })();
+  </script>
+
+
+</body></html>

@@ -1,0 +1,84 @@
+name: CI & Security Checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-windows:
+    name: Rust Lint, Test & Windows Release Smoke Test
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy lints
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Run unit and integration tests
+        run: cargo test --locked
+
+      - name: Build Windows release binary
+        run: cargo build --release --locked
+
+      - name: Smoke-test release binary (--version and --check)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expectedVersion = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          $exe = ".\target\release\kraken-vpn.exe"
+          if (-not (Test-Path $exe)) { throw "Release binary missing at $exe" }
+
+          $versionOut = (& $exe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--version exited with $LASTEXITCODE" }
+          Write-Host "Version output: $versionOut"
+          if ($versionOut -ne "kraken-vpn $expectedVersion") {
+            throw "Expected 'kraken-vpn $expectedVersion', got '$versionOut'"
+          }
+
+          $checkOut = (& $exe --check | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--check exited with $LASTEXITCODE" }
+          Write-Host $checkOut
+          if ($checkOut -notmatch 'Self-check complete:\s*OK') {
+            throw "Self-check output did not report OK"
+          }
+
+  security:
+    name: Security Scans (Secrets & Cargo Audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for leaked secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit Rust dependencies (cargo-audit)
+        uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

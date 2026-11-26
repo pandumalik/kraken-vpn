@@ -1,0 +1,342 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring — TunnelOne</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#156E42',
+        'on-success': '#FFFFFF',
+        'success-container': '#E4F5EC',
+        'on-success-container': '#0B4327',
+        'warning': '#B45309',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FEF3C7',
+        'on-warning-container': '#78350F',
+        'light-primary': '#00452A',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#1B5E3F',
+        'light-on-primary-container': '#93D5AE',
+        'light-secondary': '#A04013',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FF8755',
+        'light-on-secondary-container': '#6F2500',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F8FAF5',
+        'light-on-background': '#191C1A',
+        'light-surface': '#F8FAF5',
+        'light-surface-dim': '#D8DBD6',
+        'light-surface-bright': '#F8FAF5',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F2F4EF',
+        'light-surface-container': '#ECEFEA',
+        'light-surface-container-high': '#E6E9E4',
+        'light-surface-container-highest': '#E1E3DE',
+        'light-on-surface': '#191C1A',
+        'light-surface-variant': '#DBE5DC',
+        'light-on-surface-variant': '#404942',
+        'light-outline': '#707972',
+        'light-outline-variant': '#BFC9C0',
+        'light-inverse-surface': '#2E312E',
+        'light-inverse-on-surface': '#EFF1ED',
+        'light-inverse-primary': '#93D5AE',
+        'dark-primary': '#93D5AE',
+        'dark-on-primary': '#003822',
+        'dark-primary-container': '#1B5E3F',
+        'dark-on-primary-container': '#93D5AE',
+        'dark-secondary': '#FFB599',
+        'dark-on-secondary': '#5A1C00',
+        'dark-secondary-container': '#872E00',
+        'dark-on-secondary-container': '#FFA682',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#111412',
+        'dark-on-background': '#E1E3DE',
+        'dark-surface': '#111412',
+        'dark-surface-dim': '#111412',
+        'dark-surface-bright': '#363A37',
+        'dark-surface-container-lowest': '#0B0F0C',
+        'dark-surface-container-low': '#191C1A',
+        'dark-surface-container': '#1D201E',
+        'dark-surface-container-high': '#272B28',
+        'dark-surface-container-highest': '#323633',
+        'dark-on-surface': '#E1E3DE',
+        'dark-surface-variant': '#404942',
+        'dark-on-surface-variant': '#BFC9C0',
+        'dark-outline': '#8A938B',
+        'dark-outline-variant': '#404942',
+        'dark-inverse-surface': '#E1E3DE',
+        'dark-inverse-on-surface': '#2E312E',
+        'dark-inverse-primary': '#296A4A',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '32px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'body': ['"Commissioner"', 'sans-serif'],
+        'label': ['"Commissioner"', 'sans-serif'],
+        'mono': ['"Reddit Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-md': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-md-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['24px', { lineHeight: '32px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'headline-md': ['18px', { lineHeight: '26px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['15px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.25px', fontWeight: '500' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '180ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Commissioner:wght@400;500;600&amp;family=Reddit+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-light-surface text-light-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Left Navigation Rail -->
+    <aside class="w-[220px] shrink-0 min-h-[1024px] bg-light-surface-container-low border-r border-light-outline-variant flex flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex items-center gap-2.5 px-2.5 pt-2">
+          <div class="w-7 h-7 rounded bg-light-primary text-light-on-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">vpn_lock</span>
+          </div>
+          <span data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">TunnelOne</span>
+        </div>
+
+        <nav aria-label="Primary navigation" class="flex flex-col gap-1">
+          <a href="../home/Home.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">home</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Home</span>
+          </a>
+          <a href="../monitoring/Monitoring.html" aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">monitoring</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Monitoring</span>
+          </a>
+          <a href="../logs/Logs.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">terminal</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Logs</span>
+          </a>
+          <a href="../settings/Settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">settings</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="pt-4 border-t border-light-outline-variant px-2.5">
+        <div class="flex items-center gap-2">
+          <span data-component-id="badge-dot" data-component-type="badge" data-component-variant="dot" role="status" aria-label="Tunnel active" class="inline-block w-2.5 h-2.5 rounded-full bg-success shrink-0"></span>
+          <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface">Connected</span>
+        </div>
+        <p data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums mt-1">01:42:18 • 10.24.8.14</p>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 min-h-[1024px] p-8" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="max-w-4xl mx-auto flex flex-col gap-8">
+        <!-- Page Header -->
+        <header class="flex items-center justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-light-on-surface">Monitoring</h1>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Real-time throughput and interface diagnostics for Corp GlobalProtect US-West.</p>
+          </div>
+          <!-- COMPONENT: button-secondary -->
+          <button id="reset-counters-btn" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-light-surface-container-lowest text-light-on-surface border border-light-outline-variant hover:bg-light-surface-container-low transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2 shrink-0">
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Reset counters</span>
+          </button>
+        </header>
+
+        <!-- 3-Column Metric Summary -->
+        <section aria-label="Traffic metrics" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          <!-- COMPONENT: card-outlined -->
+          <article data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="h-full bg-light-surface-container-lowest border border-light-outline-variant rounded-md p-6 flex flex-col justify-between gap-3">
+            <header class="flex items-center justify-between gap-2">
+              <h2 data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Download speed</h2>
+              <span class="w-2.5 h-2.5 rounded-full bg-light-primary" aria-hidden="true"></span>
+            </header>
+            <div class="flex flex-col gap-1">
+              <p id="metric-down" data-design-text-token="display-md" class="font-headline text-headline-lg text-light-on-surface tabular-nums">18.4 Mbps</p>
+              <p data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">Peak 42.1 Mbps</p>
+            </div>
+          </article>
+
+          <!-- COMPONENT: card-outlined -->
+          <article data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="h-full bg-light-surface-container-lowest border border-light-outline-variant rounded-md p-6 flex flex-col justify-between gap-3">
+            <header class="flex items-center justify-between gap-2">
+              <h2 data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Upload speed</h2>
+              <span class="w-2.5 h-2.5 rounded-full bg-light-secondary" aria-hidden="true"></span>
+            </header>
+            <div class="flex flex-col gap-1">
+              <p id="metric-up" data-design-text-token="display-md" class="font-headline text-headline-lg text-light-on-surface tabular-nums">4.2 Mbps</p>
+              <p data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">Peak 11.8 Mbps</p>
+            </div>
+          </article>
+
+          <!-- COMPONENT: card-outlined -->
+          <article data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="h-full bg-light-surface-container-lowest border border-light-outline-variant rounded-md p-6 flex flex-col justify-between gap-3">
+            <header class="flex items-center justify-between gap-2">
+              <h2 data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Session total</h2>
+              <span class="material-symbols-outlined text-[18px] text-light-on-surface-variant" aria-hidden="true">swap_vert</span>
+            </header>
+            <div class="flex flex-col gap-1">
+              <p id="metric-total" data-design-text-token="display-md" class="font-headline text-headline-lg text-light-on-surface tabular-nums">1.84 GB</p>
+              <p id="metric-breakdown" data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums">1.42 GB down / 420 MB up</p>
+            </div>
+          </article>
+        </section>
+
+        <!-- Live Traffic Chart -->
+        <section aria-labelledby="traffic-chart-heading">
+          <article data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md p-6 flex flex-col gap-5">
+            <header class="flex items-center justify-between gap-4">
+              <div class="flex flex-col gap-0.5">
+                <h2 id="traffic-chart-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Live traffic</h2>
+                <p data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Last 60 seconds on interface utun4</p>
+              </div>
+              <div class="flex items-center gap-5">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-0.5 bg-light-primary inline-block" aria-hidden="true"></span>
+                  <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface">Download</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-0.5 bg-light-secondary inline-block" aria-hidden="true"></span>
+                  <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface">Upload</span>
+                </div>
+              </div>
+            </header>
+
+            <div class="w-full">
+              <svg viewBox="0 0 760 220" class="w-full h-56 overflow-visible" role="img" aria-label="Live download and upload throughput chart">
+                <!-- Horizontal grid lines -->
+                <line x1="40" y1="20" x2="750" y2="20" stroke="#E1E3DE" stroke-width="1"></line>
+                <line x1="40" y1="70" x2="750" y2="70" stroke="#E1E3DE" stroke-width="1"></line>
+                <line x1="40" y1="120" x2="750" y2="120" stroke="#E1E3DE" stroke-width="1"></line>
+                <line x1="40" y1="170" x2="750" y2="170" stroke="#BFC9C0" stroke-width="1"></line>
+
+                <!-- Y-axis labels -->
+                <text x="32" y="24" text-anchor="end" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">30M</text>
+                <text x="32" y="74" text-anchor="end" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">20M</text>
+                <text x="32" y="124" text-anchor="end" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">10M</text>
+                <text x="32" y="174" text-anchor="end" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">0</text>
+
+                <!-- X-axis labels -->
+                <text x="40" y="196" text-anchor="start" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">-60s</text>
+                <text x="395" y="196" text-anchor="middle" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">-30s</text>
+                <text x="750" y="196" text-anchor="end" fill="#707972" font-family="Reddit Mono, monospace" font-size="11">Now</text>
+
+                <!-- Download area -->
+                <path d="M40,125 L100,112 L160,96 L220,104 L280,68 L340,76 L400,52 L460,84 L520,78 L580,62 L640,92 L700,80 L750,78 L750,170 L40,170 Z" fill="#00452A" fill-opacity="0.08"></path>
+                <!-- Download line -->
+                <path d="M40,125 L100,112 L160,96 L220,104 L280,68 L340,76 L400,52 L460,84 L520,78 L580,62 L640,92 L700,80 L750,78" fill="none" stroke="#00452A" stroke-width="2" stroke-linejoin="round"></path>
+
+                <!-- Upload line -->
+                <path d="M40,156 L100,152 L160,148 L220,155 L280,142 L340,146 L400,138 L460,149 L520,151 L580,144 L640,150 L700,147 L750,149" fill="none" stroke="#A04013" stroke-width="2" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+          </article>
+        </section>
+
+        <!-- Interface & Tunnel Details -->
+        <section aria-labelledby="interface-heading" class="flex flex-col gap-4">
+          <h2 id="interface-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Tunnel details</h2>
+
+          <!-- COMPONENT: table-standard -->
+          <div data-component-id="table-standard" data-component-type="table" data-component-variant="standard" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md overflow-hidden">
+            <table class="w-full border-collapse text-left">
+              <tbody class="divide-y divide-light-outline-variant">
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 w-48 bg-light-surface-container-low">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Interface</span>
+                  </th>
+                  <td class="px-5 py-3.5">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface tabular-nums">utun4 (MTU 1400)</span>
+                  </td>
+                  <th scope="row" class="px-5 py-3.5 w-48 bg-light-surface-container-low">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Assigned DNS</span>
+                  </th>
+                  <td class="px-5 py-3.5">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface tabular-nums">10.24.0.2, 10.24.0.3</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 w-48 bg-light-surface-container-low">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Cipher suite</span>
+                  </th>
+                  <td class="px-5 py-3.5">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface">AES-256-GCM / SHA256</span>
+                  </td>
+                  <th scope="row" class="px-5 py-3.5 w-48 bg-light-surface-container-low">
+                    <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface-variant">Gateway latency</span>
+                  </th>
+                  <td class="px-5 py-3.5">
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface tabular-nums">28 ms</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const resetBtn = document.getElementById('reset-counters-btn');
+      resetBtn.addEventListener('click', () => {
+        document.getElementById('metric-total').textContent = '0.00 GB';
+        document.getElementById('metric-breakdown').textContent = '0 MB down / 0 MB up';
+      });
+    })();
+  </script>
+
+
+</body></html>

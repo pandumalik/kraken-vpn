@@ -1,11 +1,42 @@
-# Dependency directories
+# ==============================================================================
+# Kraken VPN .gitignore
+# ==============================================================================
+
+# Rust build artifacts & debug symbols
+/target/
+**/target/
+Cargo.lock.lock
+**/*.rs.bk
+*.pdb
+release-artifacts/
+
+# Legacy Electron dependencies & build outputs
+legacy-electron/node_modules/
+legacy-electron/dist/
 node_modules/
 jspm_packages/
-
-# Packaged/build outputs
 dist/
 out/
 build/
+
+# Environment secrets and local credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Personal VPN configs, private keys & certificates
+*.ovpn
+# Keep sample.ovpn tracked for testing purposes
+!sample.ovpn
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Debug and system logs
 *.log
@@ -21,7 +52,7 @@ Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
 
-# IDEs and editors configurations
+# IDE and editor configurations
 .idea/
 .vscode/
 *.suo
@@ -29,15 +60,7 @@ $RECYCLE.BIN/
 *.njsproj
 *.sln
 *.swp
+*.swo
 
-# Environment secrets and credentials
-.env
-.env.local
-.env.*.local
-
-# Personal VPN connection files (to prevent leaking secret certificate profiles)
-*.ovpn
-# Keep sample.ovpn tracked for testing purposes
-!sample.ovpn
-
+# Local scratch notes
 note.txt

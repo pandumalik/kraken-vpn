@@ -1,0 +1,312 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — TunnelOne</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#156E42',
+        'on-success': '#FFFFFF',
+        'success-container': '#E4F5EC',
+        'on-success-container': '#0B4327',
+        'warning': '#B45309',
+        'on-warning': '#FFFFFF',
+        'warning-container': '#FEF3C7',
+        'on-warning-container': '#78350F',
+        'light-primary': '#00452A',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#1B5E3F',
+        'light-on-primary-container': '#93D5AE',
+        'light-secondary': '#A04013',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FF8755',
+        'light-on-secondary-container': '#6F2500',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F8FAF5',
+        'light-on-background': '#191C1A',
+        'light-surface': '#F8FAF5',
+        'light-surface-dim': '#D8DBD6',
+        'light-surface-bright': '#F8FAF5',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F2F4EF',
+        'light-surface-container': '#ECEFEA',
+        'light-surface-container-high': '#E6E9E4',
+        'light-surface-container-highest': '#E1E3DE',
+        'light-on-surface': '#191C1A',
+        'light-surface-variant': '#DBE5DC',
+        'light-on-surface-variant': '#404942',
+        'light-outline': '#707972',
+        'light-outline-variant': '#BFC9C0',
+        'light-inverse-surface': '#2E312E',
+        'light-inverse-on-surface': '#EFF1ED',
+        'light-inverse-primary': '#93D5AE',
+        'dark-primary': '#93D5AE',
+        'dark-on-primary': '#003822',
+        'dark-primary-container': '#1B5E3F',
+        'dark-on-primary-container': '#93D5AE',
+        'dark-secondary': '#FFB599',
+        'dark-on-secondary': '#5A1C00',
+        'dark-secondary-container': '#872E00',
+        'dark-on-secondary-container': '#FFA682',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#111412',
+        'dark-on-background': '#E1E3DE',
+        'dark-surface': '#111412',
+        'dark-surface-dim': '#111412',
+        'dark-surface-bright': '#363A37',
+        'dark-surface-container-lowest': '#0B0F0C',
+        'dark-surface-container-low': '#191C1A',
+        'dark-surface-container': '#1D201E',
+        'dark-surface-container-high': '#272B28',
+        'dark-surface-container-highest': '#323633',
+        'dark-on-surface': '#E1E3DE',
+        'dark-surface-variant': '#404942',
+        'dark-on-surface-variant': '#BFC9C0',
+        'dark-outline': '#8A938B',
+        'dark-outline-variant': '#404942',
+        'dark-inverse-surface': '#E1E3DE',
+        'dark-inverse-on-surface': '#2E312E',
+        'dark-inverse-primary': '#296A4A',
+      },
+      borderRadius: {
+        'sm': '4px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '40px',
+        'page-margin': '32px',
+      },
+      fontFamily: {
+        'display': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'headline': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'title': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'body': ['"Commissioner"', 'sans-serif'],
+        'label': ['"Commissioner"', 'sans-serif'],
+        'mono': ['"Reddit Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-md': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-md-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['24px', { lineHeight: '32px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'headline-md': ['18px', { lineHeight: '26px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-sm': ['15px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.25px', fontWeight: '500' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '180ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Commissioner:wght@400;500;600&amp;family=Reddit+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-light-surface text-light-on-surface font-body antialiased">
+  <div class="min-h-[1024px] flex" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Left Navigation Rail -->
+    <aside class="w-[220px] shrink-0 min-h-[1024px] bg-light-surface-container-low border-r border-light-outline-variant flex flex-col justify-between p-4" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="flex flex-col gap-6">
+        <div class="flex items-center gap-2.5 px-2.5 pt-2">
+          <div class="w-7 h-7 rounded bg-light-primary text-light-on-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">vpn_lock</span>
+          </div>
+          <span data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">TunnelOne</span>
+        </div>
+
+        <nav aria-label="Primary navigation" class="flex flex-col gap-1">
+          <a href="../home/Home.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">home</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Home</span>
+          </a>
+          <a href="../monitoring/Monitoring.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">monitoring</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Monitoring</span>
+          </a>
+          <a href="../logs/Logs.html" class="flex items-center gap-3 px-3 py-2.5 rounded text-light-on-surface-variant hover:bg-light-surface-container hover:text-light-on-surface transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">terminal</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Logs</span>
+          </a>
+          <a href="../settings/Settings.html" aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded bg-light-surface-container-lowest text-light-primary border border-light-outline-variant transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">settings</span>
+            <span data-design-text-token="label-lg" class="font-body text-label-lg">Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="pt-4 border-t border-light-outline-variant px-2.5">
+        <div class="flex items-center gap-2">
+          <span data-component-id="badge-dot" data-component-type="badge" data-component-variant="dot" role="status" aria-label="Tunnel active" class="inline-block w-2.5 h-2.5 rounded-full bg-success shrink-0"></span>
+          <span data-design-text-token="label-md" class="font-body text-label-md text-light-on-surface">Connected</span>
+        </div>
+        <p data-design-text-token="mono-sm" class="font-mono text-mono-sm text-light-on-surface-variant tabular-nums mt-1">01:42:18 • 10.24.8.14</p>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 min-h-[1024px] p-8" data-stitch-vh="min-h-[1024px]===min-h-screen">
+      <div class="max-w-4xl mx-auto flex flex-col gap-8">
+        <!-- Page Header -->
+        <header class="flex flex-col gap-1">
+          <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-light-on-surface">Settings</h1>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant">Configure connection behavior, DNS routing, and diagnostic logging.</p>
+        </header>
+
+        <!-- Connection Settings -->
+        <section aria-labelledby="connection-settings-heading" class="flex flex-col gap-3">
+          <h2 id="connection-settings-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Connection</h2>
+
+          <div data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md px-6 divide-y divide-light-outline-variant">
+            <!-- COMPONENT: toggle-description -->
+            <label data-component-id="toggle-description" data-component-type="toggle" data-component-variant="with-description" class="flex items-center justify-between gap-6 py-4 cursor-pointer">
+              <div class="flex flex-col gap-0.5">
+                <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Auto-connect on launch</span>
+                <span data-design-text-token="body-sm" id="desc-autoconnect" class="font-body text-body-sm text-light-on-surface-variant">Restore the last active VPN profile when TunnelOne starts.</span>
+              </div>
+              <button type="button" role="switch" aria-checked="true" aria-describedby="desc-autoconnect" class="toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-primary border border-light-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2">
+                <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 translate-y-[1px] rounded-full bg-light-on-primary transition-transform duration-state-change ease-state-change"></span>
+              </button>
+            </label>
+
+            <!-- COMPONENT: toggle-description -->
+            <label data-component-id="toggle-description" data-component-type="toggle" data-component-variant="with-description" class="flex items-center justify-between gap-6 py-4 cursor-pointer">
+              <div class="flex flex-col gap-0.5">
+                <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Reconnect on network change</span>
+                <span data-design-text-token="body-sm" id="desc-reconnect" class="font-body text-body-sm text-light-on-surface-variant">Automatically re-establish the tunnel when switching Wi-Fi or Ethernet.</span>
+              </div>
+              <button type="button" role="switch" aria-checked="true" aria-describedby="desc-reconnect" class="toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-primary border border-light-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2">
+                <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 translate-y-[1px] rounded-full bg-light-on-primary transition-transform duration-state-change ease-state-change"></span>
+              </button>
+            </label>
+
+            <!-- COMPONENT: toggle-description -->
+            <label data-component-id="toggle-description" data-component-type="toggle" data-component-variant="with-description" class="flex items-center justify-between gap-6 py-4 cursor-pointer">
+              <div class="flex flex-col gap-0.5">
+                <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Block non-VPN traffic (Kill switch)</span>
+                <span data-design-text-token="body-sm" id="desc-killswitch" class="font-body text-body-sm text-light-on-surface-variant">Drop outbound packets if the active tunnel disconnects unexpectedly.</span>
+              </div>
+              <button type="button" role="switch" aria-checked="false" aria-describedby="desc-killswitch" class="toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-surface-container-highest border border-light-outline-variant transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2">
+                <span class="pointer-events-none inline-block h-5 w-5 translate-x-0.5 translate-y-[1px] rounded-full bg-light-surface-container-lowest border border-light-outline-variant transition-transform duration-state-change ease-state-change"></span>
+              </button>
+            </label>
+          </div>
+        </section>
+
+        <!-- Network & DNS -->
+        <section aria-labelledby="network-settings-heading" class="flex flex-col gap-3">
+          <h2 id="network-settings-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Network and DNS</h2>
+
+          <div data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md px-6 divide-y divide-light-outline-variant">
+            <div class="flex items-center justify-between gap-6 py-4">
+              <div class="flex flex-col gap-0.5">
+                <label for="dns-input" data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Custom DNS servers</label>
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Override gateway-pushed resolvers when connected.</span>
+              </div>
+              <input id="dns-input" type="text" value="10.24.0.2, 1.1.1.1" class="w-60 px-3 py-2 rounded bg-light-surface-container-lowest border border-light-outline-variant font-mono text-mono-sm text-light-on-surface tabular-nums focus:border-light-primary focus:ring-1 focus:ring-light-primary">
+            </div>
+
+            <!-- COMPONENT: toggle-description -->
+            <label data-component-id="toggle-description" data-component-type="toggle" data-component-variant="with-description" class="flex items-center justify-between gap-6 py-4 cursor-pointer">
+              <div class="flex flex-col gap-0.5">
+                <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Split tunneling</span>
+                <span data-design-text-token="body-sm" id="desc-split" class="font-body text-body-sm text-light-on-surface-variant">Route only profile-defined subnets through the VPN tunnel.</span>
+              </div>
+              <button type="button" role="switch" aria-checked="true" aria-describedby="desc-split" class="toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-primary border border-light-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2">
+                <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 translate-y-[1px] rounded-full bg-light-on-primary transition-transform duration-state-change ease-state-change"></span>
+              </button>
+            </label>
+          </div>
+        </section>
+
+        <!-- Diagnostics & Reset -->
+        <section aria-labelledby="diagnostics-settings-heading" class="flex flex-col gap-3">
+          <h2 id="diagnostics-settings-heading" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface">Diagnostics</h2>
+
+          <div data-component-id="card-outlined" data-component-type="card" data-component-variant="outlined" class="bg-light-surface-container-lowest border border-light-outline-variant rounded-md px-6 divide-y divide-light-outline-variant">
+            <div class="flex items-center justify-between gap-6 py-4">
+              <div class="flex flex-col gap-0.5">
+                <label for="verbosity-select" data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Log verbosity</label>
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Choose how much protocol detail is recorded in Logs.</span>
+              </div>
+              <select id="verbosity-select" class="w-44 px-3 py-2 rounded bg-light-surface-container-lowest border border-light-outline-variant font-body text-body-sm text-light-on-surface focus:border-light-primary focus:ring-1 focus:ring-light-primary">
+                <option value="standard" selected>Standard</option>
+                <option value="debug">Debug (verbose)</option>
+                <option value="errors">Errors only</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between gap-6 py-4">
+              <div class="flex flex-col gap-0.5">
+                <span data-design-text-token="title-sm" class="font-headline text-title-sm text-light-on-surface">Reset preferences</span>
+                <span data-design-text-token="body-sm" class="font-body text-body-sm text-light-on-surface-variant">Restore default settings without removing saved VPN profiles.</span>
+              </div>
+              <!-- COMPONENT: button-destructive -->
+              <button data-component-id="button-destructive" data-component-type="button" data-component-variant="destructive" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-light-error-container text-light-on-error-container border border-light-outline-variant hover:bg-light-error hover:text-light-on-error transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-error focus-visible:ring-offset-2 shrink-0">
+                <span data-design-text-token="label-lg" class="font-body text-label-lg">Reset settings</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.toggle-switch').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const checked = btn.getAttribute('aria-checked') === 'true';
+          const next = !checked;
+          btn.setAttribute('aria-checked', String(next));
+          const thumb = btn.querySelector('span');
+          if (next) {
+            btn.className = 'toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-primary border border-light-primary transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2';
+            thumb.className = 'pointer-events-none inline-block h-5 w-5 translate-x-5 translate-y-[1px] rounded-full bg-light-on-primary transition-transform duration-state-change ease-state-change';
+          } else {
+            btn.className = 'toggle-switch relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-light-surface-container-highest border border-light-outline-variant transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-primary focus-visible:ring-offset-2';
+            thumb.className = 'pointer-events-none inline-block h-5 w-5 translate-x-0.5 translate-y-[1px] rounded-full bg-light-surface-container-lowest border border-light-outline-variant transition-transform duration-state-change ease-state-change';
+          }
+        });
+      });
+    })();
+  </script>
+
+
+</body></html>

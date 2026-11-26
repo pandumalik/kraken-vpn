@@ -1,57 +1,193 @@
-name: Build Windows Executable & Release
+name: Build & Release Windows Executable
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish a GitHub Release tagged v<Cargo.toml version>"
+        type: boolean
+        default: false
+      prerelease:
+        description: "Mark the GitHub Release as a prerelease"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build .EXE Executable
+  verify-and-build:
+    name: Verify, Build & Package Windows Release
     runs-on: windows-latest
-
     permissions:
-      contents: write
-
+      contents: read
+    env:
+      CARGO_TERM_COLOR: always
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve version from Cargo.toml
+        id: meta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $match = Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
+          if (-not $match) { throw "Could not find package version in Cargo.toml" }
+          $version = $match.Matches[0].Groups[1].Value
+          $tag = "v$version"
+
+          if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -ne $tag) {
+            throw "Git tag '${{ github.ref_name }}' does not match Cargo.toml version '$tag'."
+          }
+
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "artifact_name=KrakenVPN-Windows-$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Resolved release version=$version tag=$tag"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy lints
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Build Windows release executable
+        run: cargo build --release --locked
+
+      - name: Smoke-test release executable (--version and --check)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = ".\target\release\kraken-vpn.exe"
+          $expectedVersion = "${{ steps.meta.outputs.version }}"
+
+          $versionOut = (& $exe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--version exited with $LASTEXITCODE" }
+          Write-Host "Version output: $versionOut"
+          if ($versionOut -ne "kraken-vpn $expectedVersion") {
+            throw "Expected 'kraken-vpn $expectedVersion', got '$versionOut'"
+          }
+
+          $checkOut = (& $exe --check | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--check exited with $LASTEXITCODE" }
+          Write-Host $checkOut
+          if ($checkOut -notmatch 'Self-check complete:\s*OK') {
+            throw "Self-check output did not report OK"
+          }
+
+      - name: Package executable, portable archive, and SHA256 checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = "${{ steps.meta.outputs.version }}"
+          $outDir = "release-artifacts"
+          $stageDir = Join-Path $outDir "stage"
+          New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
+
+          $exeName = "KrakenVPN-$version-windows-x86_64.exe"
+          $zipName = "KrakenVPN-$version-windows-x86_64.zip"
+
+          Copy-Item ".\target\release\kraken-vpn.exe" (Join-Path $outDir $exeName)
+          Copy-Item ".\target\release\kraken-vpn.exe" (Join-Path $stageDir "kraken-vpn.exe")
+          foreach ($doc in @("README.md", "LICENSE", "sample.ovpn")) {
+            if (Test-Path $doc) { Copy-Item $doc (Join-Path $stageDir $doc) }
+          }
+
+          Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath (Join-Path $outDir $zipName) -Force
+          Remove-Item -Recurse -Force $stageDir
+
+          $sumLines = foreach ($file in @($exeName, $zipName)) {
+            $hash = (Get-FileHash -Algorithm SHA256 -Path (Join-Path $outDir $file)).Hash.ToLowerInvariant()
+            "$hash  $file"
+          }
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText((Join-Path (Resolve-Path $outDir) "SHA256SUMS.txt"), ($sumLines -join "`n") + "`n", $utf8NoBom)
+
+          Write-Host "Packaged artifacts:"
+          Get-ChildItem $outDir | Format-Table Name, Length -AutoSize
+          Get-Content (Join-Path $outDir "SHA256SUMS.txt")
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: release-artifacts/*
+          retention-days: 30
+          if-no-files-found: error
+
+  audit:
+    name: Security Audit (Secrets & Cargo Audit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-
-      - name: Resolve Version & Git Tag
-        id: version_step
-        run: node .github/scripts/version-bump.js
+      - name: Scan for leaked secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Executable with electron-builder
-        run: npm run dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Audit Rust dependencies (cargo-audit)
+        uses: rustsec/audit-check@v2.0.0
         with:
-          name: KrakenVPN-Windows-${{ steps.version_step.outputs.version }}
-          path: dist/*.exe
-          retention-days: 30
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Publish GitHub Release
+    needs: [verify-and-build, audit]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish_release == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.verify-and-build.outputs.artifact_name }}
+          path: release-artifacts
+
+      - name: Verify SHA256 checksums before release
+        working-directory: release-artifacts
+        run: sha256sum -c SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: steps.version_step.outputs.tag != ''
         with:
-          tag_name: ${{ steps.version_step.outputs.tag }}
-          name: KrakenVPN ${{ steps.version_step.outputs.tag }}
+          tag_name: ${{ needs.verify-and-build.outputs.tag }}
+          name: Kraken VPN ${{ needs.verify-and-build.outputs.tag }}
           draft: false
-          prerelease: false
-          files: dist/*.exe
+          prerelease: ${{ inputs.prerelease == true }}
+          generate_release_notes: true
+          files: |
+            release-artifacts/*.exe
+            release-artifacts/*.zip
+            release-artifacts/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
