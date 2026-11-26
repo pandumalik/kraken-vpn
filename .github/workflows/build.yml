@@ -180,7 +180,7 @@ jobs:
         run: sha256sum -c SHA256SUMS.txt
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.verify-and-build.outputs.tag }}
           name: Kraken VPN ${{ needs.verify-and-build.outputs.tag }}
