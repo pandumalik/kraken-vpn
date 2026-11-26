@@ -1,0 +1,353 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.0.1). Leave blank to auto-increment patch (+1)."
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Mark this GitHub Release as a prerelease"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve Tag & Generate Release Notes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      prev_tag: ${{ steps.version.outputs.prev_tag }}
+      commit_sha: ${{ steps.version.outputs.commit_sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve next release tag, sync Cargo version, and build release notes
+        id: version
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Latest existing semver v* tag (if any)
+          PREV_TAG="$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)"
+          CARGO_VER="$(sed -nE 's/^version\s*=\s*"([^"]+)"/\1/p' Cargo.toml | head -n 1)"
+
+          if [ -z "$CARGO_VER" ]; then
+            echo "::error::Could not read version from Cargo.toml"
+            exit 1
+          fi
+
+          RAW_INPUT="$(echo "${INPUT_TAG:-}" | xargs)"
+          if [ -n "$RAW_INPUT" ]; then
+            # Normalize to v-prefixed tag
+            TAG="v${RAW_INPUT#v}"
+            VERSION="${TAG#v}"
+            if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+              echo "::error::Invalid tag '$RAW_INPUT'. Expected semver like v2.0.1 or 2.0.1."
+              exit 1
+            fi
+          else
+            # Auto-bump patch (+1) from the highest of latest tag vs Cargo.toml
+            VERSION="$(python3 - "$PREV_TAG" "$CARGO_VER" <<'PY'
+          import re, sys
+
+          prev_tag = sys.argv[1].lstrip("v")
+          cargo_ver = sys.argv[2]
+
+          def parse(v):
+              m = re.match(r"^(\d+)\.(\d+)\.(\d+)", v or "")
+              return tuple(int(x) for x in m.groups()) if m else None
+
+          p = parse(prev_tag)
+          c = parse(cargo_ver)
+
+          if p is None:
+              maj, min_, pat = c
+              print(f"{maj}.{min_}.{pat + 1}")
+          elif c > p:
+              # Cargo.toml was already bumped ahead of the last tag (e.g. v1.0.2 -> 2.0.0)
+              print(f"{c[0]}.{c[1]}.{c[2]}")
+          else:
+              print(f"{p[0]}.{p[1]}.{p[2] + 1}")
+          PY
+            )"
+            TAG="v${VERSION}"
+          fi
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::Tag '${TAG}' already exists."
+            exit 1
+          fi
+
+          echo "Previous tag: ${PREV_TAG:-<none>}"
+          echo "Resolved tag: ${TAG} (version ${VERSION})"
+
+          # Generate release notes from commit messages since previous tag
+          mkdir -p release-meta
+          NOTES_FILE="release-meta/release-notes.md"
+          {
+            echo "## What's Changed"
+            echo ""
+            if [ -n "$PREV_TAG" ]; then
+              COMMITS="$(git log "${PREV_TAG}..HEAD" --no-merges --pretty=format:'- %s (`%h`)' | grep -v '\[skip ci\]' || true)"
+            else
+              COMMITS="$(git log --no-merges --pretty=format:'- %s (`%h`)' | grep -v '\[skip ci\]' || true)"
+            fi
+            if [ -n "$COMMITS" ]; then
+              echo "$COMMITS"
+            else
+              echo "- Maintenance release"
+            fi
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "Download and run **\`KrakenVPN-Setup-${VERSION}-windows-x86_64.exe\`** below. The installer automatically checks for OpenVPN and OpenConnect-GUI and offers to download any missing VPN engines."
+            if [ -n "$PREV_TAG" ]; then
+              echo ""
+              echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...${TAG}"
+            fi
+          } > "$NOTES_FILE"
+
+          cat "$NOTES_FILE"
+
+          # Sync Cargo.toml & Cargo.lock if version changed
+          if [ "$CARGO_VER" != "$VERSION" ]; then
+            python3 - "$VERSION" <<'PY'
+          import re, sys, pathlib
+
+          new_ver = sys.argv[1]
+
+          cargo_toml = pathlib.Path("Cargo.toml")
+          toml_text = cargo_toml.read_text(encoding="utf-8")
+          updated_toml, n = re.subn(
+              r'(?m)^version\s*=\s*"[^"]+"',
+              f'version = "{new_ver}"',
+              toml_text,
+              count=1,
+          )
+          assert n == 1, "Failed to update version in Cargo.toml"
+          cargo_toml.write_text(updated_toml, encoding="utf-8")
+
+          cargo_lock = pathlib.Path("Cargo.lock")
+          if cargo_lock.exists():
+              lock_text = cargo_lock.read_text(encoding="utf-8")
+              updated_lock, m = re.subn(
+                  r'(\[\[package\]\]\s+name = "kraken-vpn"\s+version = )"[^"]+"',
+                  rf'\g<1>"{new_ver}"',
+                  lock_text,
+                  count=1,
+              )
+              if m == 1:
+                  cargo_lock.write_text(updated_lock, encoding="utf-8")
+          PY
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Cargo.toml Cargo.lock
+            git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          {
+            echo "tag=${TAG}"
+            echo "version=${VERSION}"
+            echo "prev_tag=${PREV_TAG}"
+            echo "commit_sha=${COMMIT_SHA}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-meta/release-notes.md
+          retention-days: 7
+          if-no-files-found: error
+
+  build:
+    name: Verify & Build Windows Installer
+    needs: [prepare]
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.commit_sha }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy lints
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Run unit and integration tests
+        run: cargo test --locked
+
+      - name: Build Windows release executable
+        run: cargo build --release --locked
+
+      - name: Smoke-test release executable (--version and --check)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = ".\target\release\kraken-vpn.exe"
+          $expectedVersion = "${{ needs.prepare.outputs.version }}"
+
+          $versionOut = (& $exe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--version exited with $LASTEXITCODE" }
+          Write-Host "Version output: $versionOut"
+          if ($versionOut -ne "kraken-vpn $expectedVersion") {
+            throw "Expected 'kraken-vpn $expectedVersion', got '$versionOut'"
+          }
+
+          $checkOut = (& $exe --check | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "--check exited with $LASTEXITCODE" }
+          Write-Host $checkOut
+          if ($checkOut -notmatch 'Self-check complete:\s*OK') {
+            throw "Self-check output did not report OK"
+          }
+
+      - name: Build Windows Installer (Inno Setup 6)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress
+          }
+          .\installer\build-installer.ps1 -SkipBuild
+
+      - name: Generate SHA256SUMS.txt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = "${{ needs.prepare.outputs.version }}"
+          $outDir = "release-artifacts"
+          $setupName = "KrakenVPN-Setup-$version-windows-x86_64.exe"
+          $setupPath = Join-Path $outDir $setupName
+
+          if (-not (Test-Path $setupPath)) {
+            throw "Expected installer missing at $setupPath"
+          }
+
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $setupPath).Hash.ToLowerInvariant()
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText((Join-Path (Resolve-Path $outDir) "SHA256SUMS.txt"), "$hash  $setupName`n", $utf8NoBom)
+
+          Get-ChildItem $outDir | Format-Table Name, Length -AutoSize
+          Get-Content (Join-Path $outDir "SHA256SUMS.txt")
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts/*
+          retention-days: 30
+          if-no-files-found: error
+
+  audit:
+    name: Security Audit (Secrets & Cargo Audit)
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Scan for leaked secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
+      - name: Audit Rust dependencies (cargo-audit)
+        run: cargo audit --file Cargo.lock
+
+  publish:
+    name: Create Tag & Publish GitHub Release
+    needs: [prepare, build, audit]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.commit_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: release-meta
+
+      - name: Download installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts
+
+      - name: Verify SHA256 checksums
+        working-directory: release-artifacts
+        run: sha256sum -c SHA256SUMS.txt
+
+      - name: Create and push Git tag
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Kraken VPN ${{ needs.prepare.outputs.tag }}
+          body_path: release-meta/release-notes.md
+          draft: false
+          prerelease: ${{ inputs.prerelease == true }}
+          files: |
+            release-artifacts/KrakenVPN-Setup-*.exe
+            release-artifacts/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
