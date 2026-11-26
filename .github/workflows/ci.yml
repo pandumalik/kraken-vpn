@@ -20,7 +20,7 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -78,7 +78,7 @@ jobs:
           .\installer\build-installer.ps1 -SkipBuild
 
       - name: Upload Windows Installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: KrakenVPN-Windows-Installer
           path: release-artifacts/KrakenVPN-Setup-*.exe
@@ -90,12 +90,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Scan for leaked secrets (Gitleaks)
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
