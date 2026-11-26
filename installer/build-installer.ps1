@@ -28,10 +28,10 @@ try {
         throw "target\release\kraken-vpn.exe not found. Run cargo build --release first."
     }
 
-    # 3. Convert icon.png -> installer\kraken-vpn.ico (256x256 PNG-in-ICO)
-    if (Test-Path "icon.png") {
+    # 3. Convert icon-2.png -> installer\kraken-vpn.ico (256x256 PNG-in-ICO)
+    if (Test-Path "icon-2.png") {
         Add-Type -AssemblyName System.Drawing
-        $src = [System.Drawing.Image]::FromFile((Resolve-Path "icon.png"))
+        $src = [System.Drawing.Image]::FromFile((Resolve-Path "icon-2.png"))
         $bmp = New-Object System.Drawing.Bitmap 256, 256
         $g = [System.Drawing.Graphics]::FromImage($bmp)
         $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic

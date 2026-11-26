@@ -80,7 +80,7 @@ cargo run --release
 ```text
 kraken-vpn/
 ├── Cargo.toml
-├── icon.png
+├── icon-2.png
 ├── sample.ovpn
 ├── installer/
 │   ├── kraken-vpn.iss        # Inno Setup 6 script (auto-detects & downloads VPN engines)

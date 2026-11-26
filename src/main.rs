@@ -5,12 +5,12 @@ use std::path::Path;
 use eframe::egui;
 use kraken_vpn::models::AppSettings;
 use kraken_vpn::ovpn::parse_ovpn;
-use kraken_vpn::platform::{check_binary, is_elevated};
+use kraken_vpn::platform::{check_binary, is_elevated, relaunch_as_admin};
 use kraken_vpn::secrets::{protect_secret, unprotect_secret};
 use kraken_vpn::store::ProfileStore;
 use kraken_vpn::ui::KrakenApp;
 
-const APP_ICON_PNG: &[u8] = include_bytes!("../icon.png");
+const APP_ICON_PNG: &[u8] = include_bytes!("../icon-2.png");
 
 fn main() -> eframe::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -20,6 +20,14 @@ fn main() -> eframe::Result<()> {
     }
     if args.iter().any(|a| a == "--check" || a == "--self-check") {
         std::process::exit(run_self_check());
+    }
+
+    // Automatically request Administrator elevation on Windows before opening the GUI
+    // so OpenVPN/OpenConnect virtual adapters and routes work out of the box.
+    // Pass `--no-elevate` to skip the prompt (or if UAC is cancelled, falls back with banner).
+    #[cfg(windows)]
+    if !args.iter().any(|a| a == "--no-elevate") && !is_elevated() && relaunch_as_admin().is_ok() {
+        return Ok(());
     }
 
     let mut viewport = egui::ViewportBuilder::default()
