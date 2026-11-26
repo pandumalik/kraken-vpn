@@ -1,34 +1,28 @@
 # ==============================================================================
-# Kraken VPN .gitignore
+# Kraken VPN (Rust) .gitignore
 # ==============================================================================
 
-# Rust build artifacts & debug symbols
+# Rust / Cargo build artifacts & debug/profiling outputs
 /target/
 **/target/
-Cargo.lock.lock
 **/*.rs.bk
 *.pdb
-release-artifacts/
-installer/*.ico
+*.profraw
+*.profdata
+Cargo.lock.lock
 
-# Legacy Electron dependencies & build outputs
-legacy-electron/node_modules/
-legacy-electron/dist/
-node_modules/
-jspm_packages/
-dist/
-out/
-build/
-
-# Environment secrets and local credentials
-.env
-.env.*
-!.env.example
-!.env.*.example
+# Windows installer & release packaging outputs
+/release-artifacts/
+/release-meta/
+/installer/*.ico
+/installer/Output/
+*.exe
+*.msi
+SHA256SUMS.txt
 
 # Personal VPN configs, private keys & certificates
 *.ovpn
-# Keep sample.ovpn tracked for testing purposes
+# Keep sample.ovpn tracked for tests & documentation
 !sample.ovpn
 *.key
 *.pem
@@ -39,12 +33,16 @@ build/
 *.jks
 *.keystore
 
-# Debug and system logs
+# Environment secrets and local credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Debug, CI, and runtime logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 logs/
+runtime/
 
 # Operating system files
 Thumbs.db
