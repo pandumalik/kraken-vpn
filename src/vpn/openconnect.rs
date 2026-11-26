@@ -440,9 +440,7 @@ pub fn test_openconnect_endpoint(
                 if let Ok(Some(status)) = child.try_wait() {
                     let pin = detected_pin.or_else(|| extract_servercert_pin(&combined));
                     let msg = if let Some(ref p) = pin {
-                        format!(
-                            "Server certificate not trusted yet. Detected pin: {p}"
-                        )
+                        format!("Server certificate not trusted yet. Detected pin: {p}")
                     } else {
                         format!(
                             "OpenConnect exited with code {}.",

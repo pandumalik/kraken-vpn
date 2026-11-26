@@ -64,6 +64,27 @@ jobs:
             throw "Self-check output did not report OK"
           }
 
+      - name: Build Windows Installer (Inno Setup 6)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress
+          }
+          .\installer\build-installer.ps1 -SkipBuild
+
+      - name: Upload Windows Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KrakenVPN-Windows-Installer
+          path: release-artifacts/KrakenVPN-Setup-*.exe
+          retention-days: 14
+          if-no-files-found: error
+
   security:
     name: Security Scans (Secrets & Cargo Audit)
     runs-on: ubuntu-latest

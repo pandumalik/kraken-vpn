@@ -215,8 +215,7 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
     // Profile name
     field_label(ui, p, "Profile name");
     ui.add(
-        styled_text_edit(&mut app.profile_form.name, field_w)
-            .hint_text("e.g. Corporate Frankfurt"),
+        styled_text_edit(&mut app.profile_form.name, field_w).hint_text("e.g. Corporate Frankfurt"),
     );
     ui.add_space(10.0);
 
@@ -413,10 +412,7 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
         ui.vertical(|ui| {
             ui.set_width(half_w);
             field_label(ui, p, "Username (optional)");
-            ui.add(
-                styled_text_edit(&mut app.profile_form.username, half_w)
-                    .hint_text("username"),
-            );
+            ui.add(styled_text_edit(&mut app.profile_form.username, half_w).hint_text("username"));
         });
         ui.vertical(|ui| {
             ui.set_width(half_w);

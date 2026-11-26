@@ -67,6 +67,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                 &p,
                 "OpenVPN executable",
                 "Select openvpn.exe",
+                "https://openvpn.net/community-downloads/",
                 &mut app.settings.openvpn_path,
                 &mut app.openvpn_check,
                 &mut changed,
@@ -77,6 +78,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                 &p,
                 "OpenConnect executable",
                 "Select openconnect.exe",
+                "https://gui.openconnect-vpn.net/",
                 &mut app.settings.openconnect_path,
                 &mut app.openconnect_check,
                 &mut changed,
@@ -477,11 +479,13 @@ fn setting_toggle_row(
         });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn binary_path_row(
     ui: &mut egui::Ui,
     p: &Palette,
     label: &str,
     dialog_title: &str,
+    download_url: &str,
     path_value: &mut String,
     check_result: &mut Option<BinaryCheckResult>,
     changed: &mut bool,
@@ -524,12 +528,16 @@ fn binary_path_row(
                     }
                 });
 
-                // Right-to-left layout allocates Test & Browse first so TextEdit fills exact remaining width
+                // Right-to-left layout allocates Download (if missing), Test & Browse first so TextEdit fills exact remaining width
+                let is_missing = check_result.as_ref().is_some_and(|r| !r.found);
                 ui.allocate_ui_with_layout(
                     Vec2::new(row_w, CONTROL_HEIGHT),
                     egui::Layout::right_to_left(egui::Align::Center),
                     |ui| {
                         ui.spacing_mut().item_spacing.x = 6.0;
+                        if is_missing && row_secondary_button(ui, p, "Download").clicked() {
+                            ui.ctx().open_url(egui::OpenUrl::new_tab(download_url));
+                        }
                         if row_secondary_button(ui, p, "Test").clicked() {
                             *check_result = Some(check_binary(path_value));
                         }

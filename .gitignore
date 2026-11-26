@@ -9,6 +9,7 @@ Cargo.lock.lock
 **/*.rs.bk
 *.pdb
 release-artifacts/
+installer/*.ico
 
 # Legacy Electron dependencies & build outputs
 legacy-electron/node_modules/
