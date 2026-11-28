@@ -6,4 +6,5 @@ pub mod store;
 pub mod telemetry;
 pub mod tray;
 pub mod ui;
+pub mod updater;
 pub mod vpn;

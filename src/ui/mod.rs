@@ -26,6 +26,7 @@ use crate::store::ProfileStore;
 use crate::telemetry::TelemetrySnapshot;
 use crate::tray::TrayController;
 use crate::ui::theme::{apply_stitch_theme, install_fonts, semibold, Palette};
+use crate::updater::{check_for_updates, UpdateCheckResult};
 use crate::vpn::manager::VpnManager;
 use crate::vpn::openconnect::OpenConnectTestResult;
 use crate::vpn::state::TunnelState;
@@ -60,6 +61,9 @@ pub struct KrakenApp {
     pub quit_requested: bool,
     pub cached_logs: Vec<DiagnosticsLine>,
     pub cached_logs_version: u64,
+    pub update_check_rx: Option<Receiver<UpdateCheckResult>>,
+    pub update_status: Option<UpdateCheckResult>,
+    pub update_notify_on_finish: bool,
 }
 
 impl KrakenApp {
@@ -105,7 +109,7 @@ impl KrakenApp {
             ),
         );
 
-        Self {
+        let mut app = Self {
             store,
             manager,
             profiles,
@@ -135,7 +139,25 @@ impl KrakenApp {
             quit_requested: false,
             cached_logs: Vec::new(),
             cached_logs_version: u64::MAX,
+            update_check_rx: None,
+            update_status: None,
+            update_notify_on_finish: false,
+        };
+        app.start_update_check(false);
+        app
+    }
+
+    pub fn start_update_check(&mut self, notify_on_finish: bool) {
+        if self.update_check_rx.is_some() {
+            return;
         }
+        let (tx, rx) = mpsc::channel();
+        self.update_check_rx = Some(rx);
+        self.update_notify_on_finish = notify_on_finish;
+        std::thread::spawn(move || {
+            let res = check_for_updates();
+            let _ = tx.send(res);
+        });
     }
 
     pub fn logs_snapshot(&mut self) -> &[DiagnosticsLine] {
@@ -259,6 +281,42 @@ impl KrakenApp {
             }
         }
 
+        if let Some(ref rx) = self.update_check_rx {
+            if let Ok(result) = rx.try_recv() {
+                let notify = self.update_notify_on_finish;
+                self.update_check_rx = None;
+                self.update_notify_on_finish = false;
+                match &result {
+                    UpdateCheckResult::UpdateAvailable { release, .. } => {
+                        self.manager.push_system_log(
+                            LogLevel::System,
+                            format!(
+                                "Update available: Kraken VPN v{} ({})",
+                                release.version, release.html_url
+                            ),
+                        );
+                        if notify {
+                            self.notify(
+                                format!("Update available: Kraken VPN v{}.", release.version),
+                                false,
+                            );
+                        }
+                    }
+                    UpdateCheckResult::UpToDate { latest, .. } if notify => {
+                        self.notify(format!("You are up to date (v{latest})."), false);
+                    }
+                    UpdateCheckResult::NoReleases { .. } if notify => {
+                        self.notify("No GitHub releases published yet.", false);
+                    }
+                    UpdateCheckResult::Error(err) if notify => {
+                        self.notify(err.clone(), true);
+                    }
+                    _ => {}
+                }
+                self.update_status = Some(result);
+            }
+        }
+
         if self.last_telemetry_poll.elapsed() >= Duration::from_secs(1) {
             self.telemetry = self.manager.sample_telemetry();
             self.last_telemetry_poll = Instant::now();
@@ -323,7 +381,10 @@ impl eframe::App for KrakenApp {
             }
         }
 
-        let refresh = if state.is_busy() || self.openconnect_test_rx.is_some() {
+        let refresh = if state.is_busy()
+            || self.openconnect_test_rx.is_some()
+            || self.update_check_rx.is_some()
+        {
             Duration::from_millis(250)
         } else {
             Duration::from_secs(1)

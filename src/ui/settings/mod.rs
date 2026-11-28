@@ -1,5 +1,6 @@
 mod appearance;
 mod clients;
+mod updates;
 
 use eframe::egui::{self, Margin, RichText};
 
@@ -93,6 +94,12 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
         section_card(&p, ui, "Appearance & storage", |ui| {
             appearance::render_appearance_and_storage(app, ui, &p, &mut changed);
+        });
+
+        ui.add_space(16.0);
+
+        section_card(&p, ui, "Software updates", |ui| {
+            updates::render_updates_section(app, ui, &p);
         });
     });
 

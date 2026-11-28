@@ -6,6 +6,7 @@ use crate::telemetry::format_duration;
 use crate::ui::state::NavTab;
 use crate::ui::theme::{divider, semibold, tunnel_status_style, Palette};
 use crate::ui::KrakenApp;
+use crate::updater::UpdateCheckResult;
 use crate::vpn::state::TunnelState;
 
 impl KrakenApp {
@@ -40,11 +41,35 @@ impl KrakenApp {
                     ui.vertical(|ui| {
                         ui.spacing_mut().item_spacing.y = 0.0;
                         ui.label(semibold("Kraken VPN", 16.5, p.on_surface));
-                        ui.label(
-                            RichText::new(format!("v{}", env!("CARGO_PKG_VERSION")))
-                                .size(11.0)
-                                .color(p.outline),
-                        );
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 6.0;
+                            ui.label(
+                                RichText::new(format!("v{}", env!("CARGO_PKG_VERSION")))
+                                    .size(11.0)
+                                    .color(p.outline),
+                            );
+                            if let Some(UpdateCheckResult::UpdateAvailable {
+                                ref release, ..
+                            }) = self.update_status
+                            {
+                                let badge = egui::Button::new(semibold(
+                                    format!("v{} ↑", release.version),
+                                    10.5,
+                                    p.on_warning_container,
+                                ))
+                                .fill(p.warning_container)
+                                .stroke(Stroke::NONE)
+                                .rounding(Rounding::same(5.0))
+                                .min_size(Vec2::new(0.0, 17.0));
+                                if ui
+                                    .add(badge)
+                                    .on_hover_text("Update available — open Settings to download")
+                                    .clicked()
+                                {
+                                    self.active_tab = NavTab::Settings;
+                                }
+                            }
+                        });
                     });
                 });
 
