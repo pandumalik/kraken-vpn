@@ -1,6 +1,3 @@
-//! Persistent JSON storage for VPN profiles, settings, and connection history
-//! inside the OS application data directory (`%APPDATA%\KrakenVPN\` on Windows).
-
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,7 +14,6 @@ pub struct ProfileStore {
 }
 
 impl ProfileStore {
-    /// Opens the standard OS app-data store (`%APPDATA%\KrakenVPN` on Windows).
     pub fn default_os_store() -> Result<Self, String> {
         let base = BaseDirs::new()
             .ok_or_else(|| "Could not determine OS application data directory.".to_string())?;
@@ -25,7 +21,6 @@ impl ProfileStore {
         Self::in_dir(dir)
     }
 
-    /// Opens a store rooted at an explicit directory (also used by unit tests).
     pub fn in_dir(root_dir: impl Into<PathBuf>) -> Result<Self, String> {
         let root_dir = root_dir.into();
         fs::create_dir_all(&root_dir)
@@ -135,8 +130,7 @@ impl ProfileStore {
 fn atomic_write(dest: &Path, bytes: &[u8]) -> Result<(), String> {
     let tmp = dest.with_extension("json.tmp");
     fs::write(&tmp, bytes).map_err(|e| format!("Failed to write {}: {e}", tmp.display()))?;
-    // On Windows, fs::rename fails if dest exists in older runtimes unless removed or replaced;
-    // try rename first, fall back to remove + rename.
+
     if fs::rename(&tmp, dest).is_err() {
         let _ = fs::remove_file(dest);
         fs::rename(&tmp, dest).map_err(|e| format!("Failed to commit {}: {e}", dest.display()))?;
@@ -171,12 +165,10 @@ mod tests {
 
         store.save_profiles(&[p.clone()]).unwrap();
 
-        // Plaintext password & key passphrase must NEVER appear on disk
         let raw = fs::read_to_string(dir.join("profiles.json")).unwrap();
         assert!(!raw.contains("super-secret-vpn-pw"));
         assert!(!raw.contains("super-secret-key-pass"));
 
-        // Reloading must restore both secrets cleanly
         let loaded = store.load_profiles().unwrap();
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].name, "Corp VPN");

@@ -10,8 +10,8 @@ use std::time::{Duration, Instant};
 
 use chrono::Utc;
 use eframe::egui::{
-    self, Align2, Color32, Margin, Order, Pos2, Rect, RichText, Rounding, Sense, Stroke,
-    TextureHandle, Vec2,
+    self, Align2, Color32, Margin, Order, Pos2, RichText, Rounding, Sense, Stroke, TextureHandle,
+    Vec2,
 };
 use uuid::Uuid;
 
@@ -440,7 +440,6 @@ impl KrakenApp {
                     .inner_margin(Margin::symmetric(14.0, 18.0)),
             )
             .show(ctx, |ui| {
-                // Brand header
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 10.0;
                     if let Some(ref tex) = self.icon_texture {
@@ -469,7 +468,6 @@ impl KrakenApp {
 
                 ui.add_space(22.0);
 
-                // Navigation items
                 for (tab, label) in [
                     (NavTab::Home, "Home"),
                     (NavTab::Monitoring, "Monitoring"),
@@ -483,11 +481,9 @@ impl KrakenApp {
                     ui.add_space(4.0);
                 }
 
-                // Bottom rail status footer
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                     ui.add_space(2.0);
 
-                    // Elevation & quick theme toggle row
                     ui.horizontal(|ui| {
                         let (elev_col, elev_label) = if self.is_admin {
                             (p.success, "Administrator")
@@ -532,7 +528,6 @@ impl KrakenApp {
 
                     ui.add_space(8.0);
 
-                    // Connection status summary block (Stitch rail footer)
                     let (_, _, dot_col, status_txt) = tunnel_status_style(&p, &state);
                     let detail_line = match &state {
                         TunnelState::Connected { endpoint, .. } => {
@@ -759,7 +754,6 @@ impl eframe::App for KrakenApp {
                 .as_ref()
                 .is_some_and(TrayController::is_quit_requested);
 
-        // Intercept window close (X) and hide to system tray instead of killing the tunnel
         if ctx.input(|i| i.viewport().close_requested())
             && !quit_now
             && self.settings.minimize_to_tray_on_close
@@ -778,7 +772,6 @@ impl eframe::App for KrakenApp {
 
         self.sync_background_events();
 
-        // Keep tray hover tooltip in sync with live tunnel state
         if let Some(ref tray) = self.tray {
             let tooltip = match self.manager.state() {
                 TunnelState::Connected { profile_name, .. } => {
@@ -810,7 +803,6 @@ impl eframe::App for KrakenApp {
 
         let p = self.palette();
 
-        // Windows Administrator elevation banner (subtle Stitch amber bar)
         #[cfg(windows)]
         if !self.is_admin {
             egui::TopBottomPanel::top("admin_warning_banner")
@@ -859,10 +851,8 @@ impl eframe::App for KrakenApp {
                 });
         }
 
-        // Left navigation rail
         self.render_sidebar(ctx);
 
-        // Toast bar at bottom if present
         if let Some(ref toast) = self.toast {
             let (fill, fg) = if toast.is_error {
                 (p.error_container, p.on_error_container)
@@ -883,7 +873,6 @@ impl eframe::App for KrakenApp {
                 });
         }
 
-        // Main workspace panel (adaptive padding for compact non-fullscreen windows)
         let screen_w = ctx.screen_rect().width();
         let pad_x = if screen_w < 860.0 { 18.0 } else { 30.0 };
         let pad_y = if screen_w < 860.0 { 18.0 } else { 26.0 };
@@ -912,7 +901,6 @@ impl eframe::App for KrakenApp {
                 }
             });
 
-        // Responsive modals layered cleanly above workspace
         if self.profile_modal_open {
             profiles::render_modal(self, ctx);
         }
@@ -929,7 +917,6 @@ impl eframe::App for KrakenApp {
     }
 }
 
-/// Paints a translucent full-window backdrop behind an active modal dialog.
 pub fn paint_backdrop(ctx: &egui::Context, p: &Palette, id: &str) {
     let screen = ctx.screen_rect();
     egui::Area::new(egui::Id::new(id))
@@ -997,7 +984,6 @@ fn paint_nav_icon(painter: &egui::Painter, tab: NavTab, c: Pos2, color: Color32)
     let stroke = Stroke::new(1.6_f32, color);
     match tab {
         NavTab::Home => {
-            // Minimal geometric shield / house outline
             let roof = vec![
                 Pos2::new(c.x - 6.5, c.y - 0.5),
                 Pos2::new(c.x, c.y - 6.5),
@@ -1013,7 +999,6 @@ fn paint_nav_icon(painter: &egui::Painter, tab: NavTab, c: Pos2, color: Color32)
             painter.add(egui::Shape::line(body, stroke));
         }
         NavTab::Monitoring => {
-            // Activity pulse waveform
             let pts = vec![
                 Pos2::new(c.x - 7.0, c.y + 1.0),
                 Pos2::new(c.x - 3.5, c.y + 1.0),
@@ -1025,7 +1010,6 @@ fn paint_nav_icon(painter: &egui::Painter, tab: NavTab, c: Pos2, color: Color32)
             painter.add(egui::Shape::line(pts, stroke));
         }
         NavTab::Logs => {
-            // Structured log lines
             for dy in [-4.5_f32, 0.0_f32, 4.5_f32] {
                 let end_x = if dy > 2.0 { c.x + 3.5 } else { c.x + 6.5 };
                 painter.line_segment(
@@ -1035,7 +1019,6 @@ fn paint_nav_icon(painter: &egui::Painter, tab: NavTab, c: Pos2, color: Color32)
             }
         }
         NavTab::Settings => {
-            // Sliders icon (two crisp horizontal tracks with knobs)
             painter.line_segment(
                 [
                     Pos2::new(c.x - 6.5, c.y - 3.2),
@@ -1063,18 +1046,4 @@ fn truncate_middle(s: &str, max_chars: usize) -> String {
     let keep = max_chars.saturating_sub(1);
     let prefix: String = s.chars().take(keep).collect();
     format!("{prefix}…")
-}
-
-/// Backward-compatible alias for applying theme visuals.
-pub fn apply_theme(ctx: &egui::Context, mode: ThemeMode) {
-    let settings = AppSettings {
-        theme: mode,
-        ..AppSettings::default()
-    };
-    apply_stitch_theme(ctx, &settings);
-}
-
-/// Helper kept for consistent rounded rect calculation if needed externally.
-pub fn badge_rect(min: Pos2, size: Vec2) -> Rect {
-    Rect::from_min_size(min, size)
 }

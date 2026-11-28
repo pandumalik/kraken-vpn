@@ -60,7 +60,6 @@ fn openvpn_prepare_writes_and_cleans_temp_auth_and_config_files() {
         (cfg_p, auth_p)
     };
 
-    // Once PreparedOpenVpn drops, both temporary files must be gone
     assert!(!cfg_path.exists());
     assert!(!auth_path.exists());
     let _ = fs::remove_dir_all(&temp_dir);
@@ -140,7 +139,6 @@ fn multi_profile_store_and_switch_policy_integration() {
 fn fast_failing_openvpn_captures_full_stdout_and_root_cause_in_history() {
     let settings = AppSettings::default();
     if kraken_vpn::platform::resolve_binary(&settings.openvpn_path).is_none() {
-        // OpenVPN CLI not installed on this runner; skip live spawn assertion.
         return;
     }
 
@@ -155,7 +153,6 @@ fn fast_failing_openvpn_captures_full_stdout_and_root_cause_in_history() {
     mgr.connect(profile, &settings)
         .expect("spawn should succeed");
 
-    // Wait up to 4 seconds for OpenVPN to fail on missing CA in sample.ovpn and exit watcher to finalize
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(4);
     let mut history = Vec::new();
     while std::time::Instant::now() < deadline {

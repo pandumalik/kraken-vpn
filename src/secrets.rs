@@ -1,6 +1,3 @@
-//! Credential protection at rest using Windows DPAPI (`CryptProtectData` / `CryptUnprotectData`),
-//! with a clean cross-platform fallback for non-Windows builds.
-
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine;
 
@@ -8,8 +5,6 @@ const DPAPI_PREFIX: &str = "dpapi:v1:";
 const FALLBACK_PREFIX: &str = "b64:v1:";
 const ENTROPY: &[u8] = b"KrakenVPN.SecretStore.v2";
 
-/// Protects a plaintext secret for storage on disk.
-/// Returns `Ok(None)` for empty secrets so empty passwords are never stored.
 pub fn protect_secret(plaintext: &str) -> Result<Option<String>, String> {
     if plaintext.is_empty() {
         return Ok(None);
@@ -30,7 +25,6 @@ pub fn protect_secret(plaintext: &str) -> Result<Option<String>, String> {
     }
 }
 
-/// Unprotects a stored secret blob back into memory.
 pub fn unprotect_secret(stored: Option<&str>) -> Result<String, String> {
     let Some(raw) = stored.map(str::trim).filter(|s| !s.is_empty()) else {
         return Ok(String::new());
@@ -88,7 +82,7 @@ fn dpapi_protect(data: &[u8]) -> Result<Vec<u8>, String> {
     };
 
     // SAFETY: All pointers refer to valid slices for the duration of the FFI call,
-    // and output.pbData is freed via LocalFree when CryptProtectData succeeds.
+
     let ok = unsafe {
         CryptProtectData(
             &input,

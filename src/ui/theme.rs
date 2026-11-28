@@ -1,7 +1,3 @@
-//! Stitch-inspired Material 3 Forest-Sage design system for Kraken VPN.
-//! Provides exact Light & Dark tokens, crisp native font setup, reusable primitives,
-//! and responsive modal geometry helpers.
-
 use eframe::egui::{
     self, Color32, FontData, FontDefinitions, FontFamily, Margin, Pos2, Rect, Response, RichText,
     Rounding, Sense, Stroke, Ui, Vec2,
@@ -10,7 +6,6 @@ use eframe::egui::{
 use crate::models::{AppSettings, ColorPreset, CustomThemeColors, ThemeMode};
 use crate::vpn::state::TunnelState;
 
-/// Exact color palette derived from `stich-design` (Light & Dark Material 3 forest-sage tokens).
 #[derive(Debug, Clone, Copy)]
 pub struct Palette {
     pub surface: Color32,
@@ -56,12 +51,10 @@ fn blend_rgb(a: [u8; 3], b: [u8; 3], t: f32) -> Color32 {
 }
 
 fn is_light_color(c: [u8; 3]) -> bool {
-    // Perceived relative luminance (ITU-R BT.709)
     let lum = 0.2126 * (c[0] as f32) + 0.7152 * (c[1] as f32) + 0.0722 * (c[2] as f32);
     lum > 145.0
 }
 
-/// Returns the editable core RGB tokens for a given preset and Light/Dark mode.
 pub fn preset_colors(mode: ThemeMode, preset: ColorPreset) -> CustomThemeColors {
     match (mode, preset) {
         (ThemeMode::Light, ColorPreset::ForestSage) => CustomThemeColors {
@@ -211,7 +204,6 @@ pub fn preset_colors(mode: ThemeMode, preset: ColorPreset) -> CustomThemeColors 
     }
 }
 
-/// Returns the active editable `CustomThemeColors` for the current mode in `settings`.
 pub fn active_theme_colors(settings: &AppSettings) -> CustomThemeColors {
     let custom = match settings.theme {
         ThemeMode::Light => settings.custom_light_colors,
@@ -221,10 +213,6 @@ pub fn active_theme_colors(settings: &AppSettings) -> CustomThemeColors {
 }
 
 impl Palette {
-    pub fn for_mode(mode: ThemeMode) -> Self {
-        Self::from_preset(mode, ColorPreset::ForestSage)
-    }
-
     pub fn from_settings(settings: &AppSettings) -> Self {
         let custom = match settings.theme {
             ThemeMode::Light => settings.custom_light_colors,
@@ -354,8 +342,6 @@ impl Palette {
     }
 }
 
-/// Installs crisp native system fonts (Segoe UI + Consolas on Windows) while falling back cleanly
-/// to egui's embedded fonts on other platforms or if any font file is unavailable.
 pub fn install_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
 
@@ -392,7 +378,6 @@ pub fn install_fonts(ctx: &egui::Context) {
         }
     }
 
-    // Ensure the "semibold" named family always exists even on non-Windows platforms.
     let fallback_prop = fonts
         .families
         .get(&FontFamily::Proportional)
@@ -441,35 +426,30 @@ pub fn apply_stitch_theme(ctx: &egui::Context, settings: &AppSettings) {
     visuals.window_rounding = Rounding::same(12.0);
     visuals.window_stroke = Stroke::new(1.0_f32, p.outline_variant);
 
-    // Subtle non-interactive strokes
     visuals.widgets.noninteractive.bg_fill = p.surface_low;
     visuals.widgets.noninteractive.weak_bg_fill = p.surface_low;
     visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0_f32, p.outline_variant);
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0_f32, p.on_surface);
     visuals.widgets.noninteractive.rounding = Rounding::same(7.0);
 
-    // Inactive widgets (buttons, text edits, combos)
     visuals.widgets.inactive.bg_fill = p.surface_lowest;
     visuals.widgets.inactive.weak_bg_fill = p.surface_lowest;
     visuals.widgets.inactive.bg_stroke = Stroke::new(1.0_f32, p.outline_variant);
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, p.on_surface);
     visuals.widgets.inactive.rounding = Rounding::same(7.0);
 
-    // Hovered widgets
     visuals.widgets.hovered.bg_fill = p.surface_container;
     visuals.widgets.hovered.weak_bg_fill = p.surface_container;
     visuals.widgets.hovered.bg_stroke = Stroke::new(1.0_f32, p.outline);
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0_f32, p.on_surface);
     visuals.widgets.hovered.rounding = Rounding::same(7.0);
 
-    // Active / pressed widgets
     visuals.widgets.active.bg_fill = p.surface_high;
     visuals.widgets.active.weak_bg_fill = p.surface_high;
     visuals.widgets.active.bg_stroke = Stroke::new(1.5_f32, p.primary);
     visuals.widgets.active.fg_stroke = Stroke::new(1.0_f32, p.on_surface);
     visuals.widgets.active.rounding = Rounding::same(7.0);
 
-    // Open combos/menus
     visuals.widgets.open.bg_fill = p.surface_lowest;
     visuals.widgets.open.weak_bg_fill = p.surface_lowest;
     visuals.widgets.open.bg_stroke = Stroke::new(1.5_f32, p.primary);
@@ -497,7 +477,6 @@ pub fn apply_stitch_theme(ctx: &egui::Context, settings: &AppSettings) {
     ctx.set_style(style);
 }
 
-/// Outlined Stitch card container with 12px radius and comfortable inner padding.
 pub fn card_frame(p: &Palette) -> egui::Frame {
     egui::Frame::none()
         .fill(p.surface_lowest)
@@ -506,7 +485,6 @@ pub fn card_frame(p: &Palette) -> egui::Frame {
         .inner_margin(Margin::same(20.0))
 }
 
-/// Bordered table/grouped-list container with zero outer padding so header bars and dividers span edge-to-edge.
 pub fn table_card_frame(p: &Palette) -> egui::Frame {
     egui::Frame::none()
         .fill(p.surface_lowest)
@@ -515,7 +493,6 @@ pub fn table_card_frame(p: &Palette) -> egui::Frame {
         .inner_margin(Margin::same(0.0))
 }
 
-/// Renders a crisp 1px full-width horizontal divider.
 pub fn divider(ui: &mut Ui, p: &Palette) {
     let width = ui.available_width();
     let (rect, _) = ui.allocate_exact_size(Vec2::new(width, 1.0), Sense::hover());
@@ -525,7 +502,6 @@ pub fn divider(ui: &mut Ui, p: &Palette) {
     );
 }
 
-/// Primary deep-forest action button matching Stitch's primary CTA.
 pub fn primary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     let btn = egui::Button::new(semibold(text, 13.5, p.on_primary))
         .fill(p.primary)
@@ -535,7 +511,6 @@ pub fn primary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     ui.add(btn)
 }
 
-/// Secondary outlined surface button matching Stitch's neutral controls.
 pub fn secondary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     let btn = egui::Button::new(semibold(text, 13.5, p.on_surface))
         .fill(p.surface_lowest)
@@ -545,7 +520,6 @@ pub fn secondary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     ui.add(btn)
 }
 
-/// Soft destructive action button (error container fill + on-error text).
 pub fn destructive_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     let btn = egui::Button::new(semibold(text, 13.5, p.on_error_container))
         .fill(p.error_container)
@@ -555,10 +529,8 @@ pub fn destructive_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     ui.add(btn)
 }
 
-/// Standard height for compact form inputs and inline row action buttons so they align flush.
 pub const CONTROL_HEIGHT: f32 = 30.0;
 
-/// Single-line `TextEdit` styled to match `row_secondary_button` height (`30px`) and vertical centering.
 pub fn styled_text_edit(text: &mut String, width: f32) -> egui::TextEdit<'_> {
     egui::TextEdit::singleline(text)
         .desired_width(width)
@@ -567,7 +539,6 @@ pub fn styled_text_edit(text: &mut String, width: f32) -> egui::TextEdit<'_> {
         .vertical_align(egui::Align::Center)
 }
 
-/// Compact table-row primary button.
 pub fn row_primary_button(ui: &mut Ui, p: &Palette, text: &str, enabled: bool) -> Response {
     let fill = if enabled {
         p.primary
@@ -583,7 +554,6 @@ pub fn row_primary_button(ui: &mut Ui, p: &Palette, text: &str, enabled: bool) -
     ui.add_enabled(enabled, btn)
 }
 
-/// Compact table-row secondary button.
 pub fn row_secondary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     let btn = egui::Button::new(semibold(text, 12.5, p.on_surface_variant))
         .fill(p.surface_lowest)
@@ -593,7 +563,6 @@ pub fn row_secondary_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     ui.add(btn)
 }
 
-/// Compact table-row destructive button.
 pub fn row_danger_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     let btn = egui::Button::new(semibold(text, 12.5, p.on_error_container))
         .fill(p.error_container)
@@ -603,7 +572,6 @@ pub fn row_danger_button(ui: &mut Ui, p: &Palette, text: &str) -> Response {
     ui.add(btn)
 }
 
-/// Compact Stitch status / protocol pill badge with pixel-perfect centered dot and label.
 pub fn pill_badge(ui: &mut Ui, bg: Color32, fg: Color32, dot: Option<Color32>, text: &str) {
     let font = egui::FontId::new(11.0, FontFamily::Name("semibold".into()));
     let galley = ui.painter().layout_no_wrap(text.to_string(), font, fg);
@@ -640,7 +608,6 @@ pub fn pill_badge(ui: &mut Ui, bg: Color32, fg: Color32, dot: Option<Color32>, t
     }
 }
 
-/// Smooth custom-painted pill toggle switch matching Stitch Settings.
 pub fn toggle_switch(ui: &mut Ui, p: &Palette, on: &mut bool) -> Response {
     let desired_size = Vec2::new(44.0, 24.0);
     let (rect, mut response) = ui.allocate_exact_size(desired_size, Sense::click());
@@ -671,8 +638,6 @@ pub fn toggle_switch(ui: &mut Ui, p: &Palette, on: &mut bool) -> Response {
     response
 }
 
-/// Centers page content up to `max_width` on wide screens while using full available width on narrow windows.
-/// Enforces both min and max width so no child widget can stretch a card past the viewport edge.
 pub fn page_container(ui: &mut Ui, max_width: f32, add_contents: impl FnOnce(&mut Ui)) {
     let avail = (ui.available_width() - 6.0).max(260.0);
     let target_w = avail.min(max_width).max(260.0);
@@ -689,8 +654,6 @@ pub fn page_container(ui: &mut Ui, max_width: f32, add_contents: impl FnOnce(&mu
     });
 }
 
-/// Condenses long CLI version banners (e.g. `OpenVPN 2.7.6 [git:...] Windows [SSL ...]`)
-/// into a compact badge label such as `OpenVPN 2.7.6`.
 pub fn short_binary_version(raw: &str) -> String {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
@@ -711,8 +674,6 @@ pub fn short_binary_version(raw: &str) -> String {
     }
 }
 
-/// Computes a responsive modal dialog size that NEVER clips off-screen or gets cut in half
-/// whether the window is fullscreen, medium, or compact non-fullscreen.
 pub fn responsive_modal_size(screen_rect: Rect, preferred_width: f32, max_height_cap: f32) -> Vec2 {
     let margin = 48.0_f32;
     let avail_w = (screen_rect.width() - margin).max(280.0);
@@ -727,7 +688,6 @@ pub fn responsive_modal_size(screen_rect: Rect, preferred_width: f32, max_height
     Vec2::new(width, height)
 }
 
-/// Returns `(badge_bg, badge_fg, dot_color, label)` for the current `TunnelState`.
 pub fn tunnel_status_style(
     p: &Palette,
     state: &TunnelState,

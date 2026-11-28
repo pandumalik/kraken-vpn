@@ -22,9 +22,6 @@ fn main() -> eframe::Result<()> {
         std::process::exit(run_self_check());
     }
 
-    // Automatically request Administrator elevation on Windows before opening the GUI
-    // so OpenVPN/OpenConnect virtual adapters and routes work out of the box.
-    // Pass `--no-elevate` to skip the prompt (or if UAC is cancelled, falls back with banner).
     #[cfg(windows)]
     if !args.iter().any(|a| a == "--no-elevate") && !is_elevated() && relaunch_as_admin().is_ok() {
         return Ok(());

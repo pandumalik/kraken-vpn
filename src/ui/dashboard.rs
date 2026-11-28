@@ -17,7 +17,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
     let state = app.manager.state();
 
     page_container(ui, 920.0, |ui| {
-        // Page Header
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 2.0;
@@ -40,12 +39,10 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(20.0);
 
-        // Active Tunnel Hero Card
         render_active_tunnel_card(app, ui, &p, &state);
 
         ui.add_space(24.0);
 
-        // Saved Profiles Section
         render_saved_profiles_table(app, ui, &p, &state);
     });
 }
@@ -66,7 +63,6 @@ fn render_active_tunnel_card(
         ui.set_max_width(inner_w);
         let left_w = (inner_w - 230.0).max(180.0);
 
-        // Top row: badges + title + CTA
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.set_width(left_w);
@@ -180,7 +176,6 @@ fn render_active_tunnel_card(
         divider(ui, p);
         ui.add_space(14.0);
 
-        // Bottom 4-column tunnel metrics strip (matching Stitch Home hero footer)
         let is_connected = state.is_connected();
         let iface_text = if is_connected {
             app.telemetry
@@ -263,7 +258,6 @@ fn render_saved_profiles_table(
     p: &Palette,
     state: &TunnelState,
 ) {
-    // Section header + search box
     ui.horizontal(|ui| {
         ui.label(semibold("Saved profiles", 15.5, p.on_surface));
         pill_badge(
@@ -334,7 +328,6 @@ fn render_saved_profiles_table(
         let col_action = 205.0_f32.min(total_w * 0.34);
         let col_gateway = (total_w - col_profile - col_proto - col_action - 48.0).max(80.0);
 
-        // Table Header Bar
         egui::Frame::none()
             .fill(p.surface_low)
             .rounding(Rounding {
@@ -412,7 +405,6 @@ fn render_saved_profiles_table(
                     ui.horizontal(|ui| {
                         ui.spacing_mut().item_spacing.x = 8.0;
 
-                        // Profile Name cell
                         ui.allocate_ui_with_layout(
                             Vec2::new(col_profile, 28.0),
                             egui::Layout::left_to_right(egui::Align::Center),
@@ -424,7 +416,6 @@ fn render_saved_profiles_table(
                             },
                         );
 
-                        // Protocol pill cell
                         ui.allocate_ui_with_layout(
                             Vec2::new(col_proto, 28.0),
                             egui::Layout::left_to_right(egui::Align::Center),
@@ -439,7 +430,6 @@ fn render_saved_profiles_table(
                             },
                         );
 
-                        // Gateway monospace cell
                         ui.allocate_ui_with_layout(
                             Vec2::new(col_gateway, 28.0),
                             egui::Layout::left_to_right(egui::Align::Center),
@@ -456,7 +446,6 @@ fn render_saved_profiles_table(
                             },
                         );
 
-                        // Right-aligned row actions
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.spacing_mut().item_spacing.x = 6.0;
                             if row_danger_button(ui, p, "Delete").clicked() {

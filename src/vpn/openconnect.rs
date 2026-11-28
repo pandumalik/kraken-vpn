@@ -1,6 +1,3 @@
-//! OpenConnect argument builder, certificate-pin detector, output event parser,
-//! vpnc-script locator, and non-blocking endpoint tester.
-
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -30,14 +27,12 @@ pub struct OpenConnectTestResult {
     pub detected_pin: Option<String>,
 }
 
-/// Formats the server target (`host:port` unless a scheme or port is already present).
 pub fn format_openconnect_target(server: &str, port: Option<u16>) -> Result<String, String> {
     let trimmed = server.trim();
     if trimmed.is_empty() {
         return Err("OpenConnect server URL or hostname is required.".to_string());
     }
     if trimmed.contains("://") {
-        // If user provided https://vpn.example.com and a non-443 port without port in URL, append cleanly.
         if let Some(p) = port {
             let after_scheme = trimmed
                 .split_once("://")
@@ -63,7 +58,6 @@ pub fn format_openconnect_target(server: &str, port: Option<u16>) -> Result<Stri
     }
 }
 
-/// Searches standard Windows locations for `vpnc-script-win.js` / `vpnc-script.js`.
 pub fn find_windows_vpnc_script(openconnect_binary: Option<&Path>) -> Option<PathBuf> {
     #[cfg(windows)]
     {
@@ -93,7 +87,6 @@ pub fn find_windows_vpnc_script(openconnect_binary: Option<&Path>) -> Option<Pat
     }
 }
 
-/// Pure OpenConnect CLI argument builder (never puts passwords in argv).
 pub fn build_openconnect_args(
     profile: &VpnProfile,
     vpnc_script: Option<&Path>,
@@ -111,8 +104,6 @@ pub fn build_openconnect_args(
         profile.openconnect_protocol,
         crate::models::OpenConnectProtocol::Fortinet
     ) {
-        // Prevent premature "Detected dead peer!" on FortiGate while vpnc-script-win.js
-        // configures split routes on Windows (which can take 5-10s).
         args.push("--force-dpd=60".to_string());
     }
 
@@ -160,7 +151,6 @@ pub fn build_openconnect_args(
     Ok(args)
 }
 
-/// Extracts `pin-sha256:<base64>` fingerprint from OpenConnect output.
 pub fn extract_servercert_pin(text: &str) -> Option<String> {
     static RE_PIN: OnceLock<Regex> = OnceLock::new();
     let re = RE_PIN.get_or_init(|| Regex::new(r"(?i)pin-sha256:([a-zA-Z0-9+/=]+)").unwrap());
@@ -215,7 +205,6 @@ pub fn is_connected_indicator(text: &str) -> bool {
     .any(|needle| lower.contains(needle))
 }
 
-/// Classifies a line or prompt chunk emitted by OpenConnect.
 pub fn parse_openconnect_output(text: &str) -> Vec<OpenConnectEvent> {
     let mut events = Vec::new();
     let trimmed = text.trim();
@@ -257,7 +246,6 @@ pub fn parse_openconnect_output(text: &str) -> Vec<OpenConnectEvent> {
     events
 }
 
-/// Runs a bounded (8s) reachability/cert-pin probe for an OpenConnect profile without leaving a tunnel open.
 pub fn test_openconnect_endpoint(
     profile: &VpnProfile,
     settings: &AppSettings,
@@ -309,7 +297,6 @@ pub fn test_openconnect_endpoint(
         }
     };
 
-    // Deliver password immediately for `--passwd-on-stdin` and close stdin so OpenConnect never hangs.
     if let Some(mut stdin) = child.stdin.take() {
         if !profile.password.is_empty() {
             let _ = writeln!(stdin, "{}", profile.password);
@@ -417,7 +404,6 @@ pub fn test_openconnect_endpoint(
                             };
                         }
                         OpenConnectEvent::CertPrompt => {
-                            // Never silently trust during probe; report detected pin cleanly.
                             if let Some(pin) = detected_pin
                                 .clone()
                                 .or_else(|| extract_servercert_pin(&combined))

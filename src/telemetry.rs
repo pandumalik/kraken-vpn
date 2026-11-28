@@ -1,6 +1,3 @@
-//! Real-time network telemetry tracker using `sysinfo::Networks` plus OpenVPN bytecount parsing
-//! and human-readable auto-scaling speed/size formatters.
-
 use std::collections::VecDeque;
 use std::time::Instant;
 
@@ -31,10 +28,11 @@ pub struct TelemetryTracker {
     session_rx: u64,
     session_tx: u64,
     preferred_interface: Option<String>,
-    /// When OpenVPN management socket provides exact tunnel byte counts, prefer those.
+
     override_totals: Option<(u64, u64)>,
     last_override_totals: Option<(u64, u64)>,
     override_baseline: (u64, u64),
+    list_refresh_ticks: u8,
 }
 
 impl Default for TelemetryTracker {
@@ -58,6 +56,7 @@ impl TelemetryTracker {
             override_totals: None,
             last_override_totals: None,
             override_baseline: (0, 0),
+            list_refresh_ticks: 0,
         }
     }
 
@@ -74,9 +73,9 @@ impl TelemetryTracker {
         self.override_totals = None;
         self.last_override_totals = None;
         self.override_baseline = (0, 0);
+        self.list_refresh_ticks = 0;
     }
 
-    /// Resets visible counters, peaks, and traffic history without dropping the active session.
     pub fn reset_counters(&mut self) {
         self.rx_history.clear();
         self.tx_history.clear();
@@ -94,7 +93,6 @@ impl TelemetryTracker {
         self.override_totals = Some((bytes_in, bytes_out));
     }
 
-    /// Samples current throughput and updates session totals.
     pub fn sample(&mut self, connected: bool) -> TelemetrySnapshot {
         if !connected {
             return TelemetrySnapshot::default();
@@ -130,7 +128,12 @@ impl TelemetryTracker {
             };
             (rx_s, tx_s, Some("OpenVPN Tunnel".to_string()))
         } else {
-            self.networks.refresh();
+            if self.list_refresh_ticks < 5 {
+                self.networks.refresh_list();
+                self.list_refresh_ticks += 1;
+            } else {
+                self.networks.refresh();
+            }
             let (d_rx, d_tx, iface_name) = self.read_network_delta();
             self.session_rx = self.session_rx.saturating_add(d_rx);
             self.session_tx = self.session_tx.saturating_add(d_tx);
@@ -177,7 +180,6 @@ impl TelemetryTracker {
     }
 
     fn read_network_delta(&self) -> (u64, u64, Option<String>) {
-        // 1. Prefer explicitly configured interface name if present.
         if let Some(ref pref) = self.preferred_interface {
             let pref_lower = pref.to_ascii_lowercase();
             for (name, data) in &self.networks {
@@ -187,7 +189,6 @@ impl TelemetryTracker {
             }
         }
 
-        // 2. Otherwise prefer VPN-like virtual interfaces (wintun, tap, tun, openvpn, wireguard).
         let mut vpn_rx = 0u64;
         let mut vpn_tx = 0u64;
         let mut vpn_name: Option<String> = None;
@@ -204,7 +205,6 @@ impl TelemetryTracker {
             return (vpn_rx, vpn_tx, vpn_name);
         }
 
-        // 3. Fallback: aggregate non-loopback interfaces so user always sees real traffic.
         let mut total_rx = 0u64;
         let mut total_tx = 0u64;
         for (name, data) in &self.networks {
@@ -230,7 +230,6 @@ pub fn is_vpn_interface_name(name: &str) -> bool {
         || lower.starts_with("tap")
 }
 
-/// Parses an OpenVPN management interface `>BYTECOUNT:<in>,<out>` line.
 pub fn parse_openvpn_bytecount(line: &str) -> Option<(u64, u64)> {
     let rest = line.trim().strip_prefix(">BYTECOUNT:")?;
     let (in_s, out_s) = rest.split_once(',')?;
@@ -239,7 +238,6 @@ pub fn parse_openvpn_bytecount(line: &str) -> Option<(u64, u64)> {
     Some((bytes_in, bytes_out))
 }
 
-/// Auto-scaling byte count formatter (`B`, `KB`, `MB`, `GB`, `TB`).
 pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut val = bytes as f64;
@@ -255,7 +253,6 @@ pub fn format_bytes(bytes: u64) -> String {
     }
 }
 
-/// Auto-scaling transfer rate formatter (`B/s`, `KB/s`, `MB/s`, `GB/s`).
 pub fn format_speed(bytes_per_sec: f64) -> String {
     if !bytes_per_sec.is_finite() || bytes_per_sec <= 0.0 {
         return "0 B/s".to_string();
@@ -274,7 +271,6 @@ pub fn format_speed(bytes_per_sec: f64) -> String {
     }
 }
 
-/// Formats elapsed seconds as `HH:MM:SS`.
 pub fn format_duration(total_secs: u64) -> String {
     let hrs = total_secs / 3600;
     let mins = (total_secs % 3600) / 60;

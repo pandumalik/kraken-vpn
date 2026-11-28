@@ -1,6 +1,3 @@
-//! System tray icon and menu integration so Kraken VPN can keep active tunnels
-//! running in the background when the main window is closed.
-
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use std::sync::Arc;
 
@@ -18,9 +15,6 @@ pub struct TrayController {
 }
 
 impl TrayController {
-    /// Creates the system tray icon + context menu.
-    /// Actions are executed directly in the Win32/tray event handlers so Show, Disconnect,
-    /// and Quit work immediately even while eframe's window is hidden (`Visible(false)`).
     pub fn new(ctx: egui::Context, icon_png: &[u8], manager: VpnManager) -> Option<Self> {
         let icon = load_tray_icon(icon_png)?;
 
@@ -48,7 +42,6 @@ impl TrayController {
         let hwnd = Arc::new(AtomicIsize::new(find_own_main_window()));
         let quit_requested = Arc::new(AtomicBool::new(false));
 
-        // Left-click or double-click on the tray icon restores the window immediately.
         let hwnd_click = hwnd.clone();
         let ctx_click = ctx.clone();
         TrayIconEvent::set_event_handler(Some(move |event: TrayIconEvent| {
@@ -68,7 +61,6 @@ impl TrayController {
             }
         }));
 
-        // Context menu item clicks execute immediately without waiting for hidden eframe::update().
         let hwnd_menu = hwnd.clone();
         let quit_menu = quit_requested.clone();
         MenuEvent::set_event_handler(Some(move |event: MenuEvent| {
@@ -85,8 +77,6 @@ impl TrayController {
                 quit_menu.store(true, Ordering::SeqCst);
                 let raw = hwnd_menu.load(Ordering::SeqCst);
                 if raw != 0 {
-                    // Unhide + post WM_CLOSE so eframe wakes up, runs on_exit() (cleaning up
-                    // VPN tunnel + history + tray icon), and exits cleanly.
                     restore_window(raw);
                     post_close_window(raw);
                 }
@@ -102,8 +92,10 @@ impl TrayController {
         })
     }
 
-    /// Captures the main window handle while the window is still visible.
     pub fn capture_window_handle(&self) {
+        if self.hwnd.load(Ordering::Relaxed) != 0 {
+            return;
+        }
         let found = find_own_main_window();
         if found != 0 {
             self.hwnd.store(found, Ordering::SeqCst);
@@ -118,7 +110,6 @@ impl TrayController {
         self.quit_requested.store(true, Ordering::SeqCst);
     }
 
-    /// Updates the tray icon hover tooltip to reflect the current tunnel status.
     pub fn set_tooltip(&self, tooltip: &str) {
         let _ = self._tray.set_tooltip(Some(tooltip));
     }

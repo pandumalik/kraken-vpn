@@ -39,7 +39,6 @@ impl OpenConnectProtocol {
         OpenConnectProtocol::JuniperNc,
     ];
 
-    /// Value passed to `openconnect --protocol=<flag>`.
     pub fn cli_flag(self) -> &'static str {
         match self {
             OpenConnectProtocol::AnyConnect => "anyconnect",
@@ -78,10 +77,9 @@ impl OpenConnectProtocol {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum SwitchPolicy {
-    /// Cleanly disconnect any active VPN tunnel before connecting to the new one.
     #[default]
     AutoSwitch,
-    /// Refuse to connect a second VPN while one is already active or connecting.
+
     RefuseWhileActive,
 }
 
@@ -134,8 +132,6 @@ impl ColorPreset {
     }
 }
 
-/// User-customizable core RGB palette tokens for a theme mode (Light or Dark).
-/// Derived shades (hover, containers, dividers, charts) are computed automatically.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CustomThemeColors {
     pub primary: [u8; 3],
@@ -155,43 +151,43 @@ pub struct VpnProfile {
     pub id: Uuid,
     pub name: String,
     pub protocol: VpnProtocol,
-    /// Optional path to an `.ovpn` file on disk (OpenVPN).
+
     #[serde(default)]
     pub ovpn_path: Option<String>,
-    /// Optional inline `.ovpn` content copied during import (OpenVPN).
+
     #[serde(default)]
     pub ovpn_content: Option<String>,
-    /// OpenConnect sub-protocol (`anyconnect`, `fortinet`, `gp`, `pulse`, `nc`).
+
     #[serde(default)]
     pub openconnect_protocol: OpenConnectProtocol,
-    /// Server host or URL (used by OpenConnect; informational for OpenVPN).
+
     #[serde(default)]
     pub server: String,
-    /// Server port (optional; defaults to 443 for OpenConnect, 1194 for OpenVPN).
+
     #[serde(default)]
     pub port: Option<u16>,
-    /// Optional authgroup / tunnel group for OpenConnect.
+
     #[serde(default)]
     pub authgroup: Option<String>,
-    /// Optional pinned server certificate (`pin-sha256:...`) for OpenConnect.
+
     #[serde(default)]
     pub servercert: Option<String>,
-    /// Optional virtual network interface name (e.g. `wintun`).
+
     #[serde(default)]
     pub interface_name: Option<String>,
-    /// Optional username for authentication.
+
     #[serde(default)]
     pub username: String,
-    /// In-memory plaintext password (NEVER serialized directly; store encrypts via DPAPI).
+
     #[serde(skip)]
     pub password: String,
-    /// Protected/encrypted password blob persisted on disk.
+
     #[serde(default)]
     pub encrypted_password: Option<String>,
-    /// Optional in-memory private key / PKCS#12 passphrase for OpenVPN `--askpass` (NEVER serialized directly).
+
     #[serde(skip)]
     pub key_passphrase: String,
-    /// Protected/encrypted private key passphrase blob persisted on disk.
+
     #[serde(default)]
     pub encrypted_key_passphrase: Option<String>,
     #[serde(default)]
@@ -329,11 +325,10 @@ pub struct AppSettings {
     #[serde(default)]
     pub custom_dark_colors: Option<CustomThemeColors>,
     pub switch_policy: SwitchPolicy,
-    /// When false (default, safer), unknown OpenConnect certs prompt for explicit user trust.
-    /// When true, detected `pin-sha256:...` pins are automatically saved and retried once.
+
     #[serde(default)]
     pub auto_trust_server_cert: bool,
-    /// When true (default), closing the window hides Kraken VPN to the system tray instead of exiting.
+
     #[serde(default = "default_true")]
     pub minimize_to_tray_on_close: bool,
 }

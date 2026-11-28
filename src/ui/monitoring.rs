@@ -16,7 +16,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
     let state = app.manager.state();
 
     page_container(ui, 920.0, |ui| {
-        // Page Header
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 2.0;
@@ -38,7 +37,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(20.0);
 
-        // 3-Column Metric Summary Row (matching Stitch Monitoring)
         let total_session = app
             .telemetry
             .session_rx_bytes
@@ -80,7 +78,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(18.0);
 
-        // Live Traffic Chart Card
         card_frame(&p).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.horizontal(|ui| {
@@ -109,7 +106,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(18.0);
 
-        // Tunnel Details Key-Value Card (matching Stitch Monitoring bottom card)
         render_tunnel_details_card(app, ui, &p, &state);
     });
 }
@@ -179,7 +175,6 @@ fn paint_live_traffic_chart(
     let raw_max = rx.iter().chain(tx.iter()).copied().fold(0.0_f64, f64::max);
     let ceil_val = nice_speed_ceiling(raw_max);
 
-    // Horizontal gridlines & Y-axis labels (0, 33%, 66%, 100%)
     for i in 0..=3 {
         let frac = i as f32 / 3.0;
         let y = plot.bottom() - frac * plot.height();
@@ -199,7 +194,6 @@ fn paint_live_traffic_chart(
         );
     }
 
-    // X-axis labels
     let x_y = plot.bottom() + 12.0;
     for (x, label, align) in [
         (plot.left(), "-60s", Align2::LEFT_CENTER),
@@ -246,7 +240,6 @@ fn paint_live_traffic_chart(
     let rx_pts = to_points(rx);
     let tx_pts = to_points(tx);
 
-    // Translucent area fill under Download curve (triangle strip mesh handles arbitrary shapes)
     if rx_pts.len() >= 2 {
         let mut mesh = Mesh::default();
         for pair in rx_pts.windows(2) {
@@ -280,7 +273,7 @@ fn paint_live_traffic_chart(
 }
 
 fn nice_speed_ceiling(raw_max: f64) -> f64 {
-    let min_floor = 16.0 * 1024.0; // 16 KB/s floor when idle/low traffic
+    let min_floor = 16.0 * 1024.0;
     let v = raw_max.max(min_floor) * 1.2;
     let mag = 10_f64.powf(v.log10().floor());
     let norm = v / mag;

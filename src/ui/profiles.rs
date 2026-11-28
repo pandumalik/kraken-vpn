@@ -1,7 +1,3 @@
-//! Responsive centered modal dialog for adding or editing a VPN profile.
-//! Uses dynamic proportional widths and an inner vertical ScrollArea so the form
-//! NEVER clips or splits in half when the application window is not fullscreen.
-
 use eframe::egui::{self, Align2, Color32, Margin, Order, RichText, Rounding, Stroke, Vec2};
 
 use crate::models::{OpenConnectProtocol, VpnProtocol};
@@ -43,7 +39,6 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
                 .show(ui, |ui| {
                     ui.set_width(modal_size.x);
 
-                    // Fixed Modal Header
                     egui::Frame::none()
                         .inner_margin(Margin::symmetric(22.0, 16.0))
                         .show(ui, |ui| {
@@ -85,7 +80,6 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
 
                     divider(ui, &p);
 
-                    // Scrollable Form Body (adapts cleanly to any non-fullscreen height)
                     let body_max_h = (modal_size.y - 138.0).max(160.0);
                     egui::ScrollArea::vertical()
                         .id_salt("profile_modal_body_scroll")
@@ -103,7 +97,6 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
 
                     divider(ui, &p);
 
-                    // Fixed Modal Footer
                     egui::Frame::none()
                         .fill(p.surface_low)
                         .rounding(Rounding {
@@ -150,12 +143,14 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
                                     |ui| {
                                         if primary_button(ui, &p, "Save profile").clicked() {
                                             match app.profile_form.to_profile() {
-                                                Ok(new_prof) => {
+                                                Ok(mut new_prof) => {
                                                     if let Some(pos) = app
                                                         .profiles
                                                         .iter()
                                                         .position(|x| x.id == new_prof.id)
                                                     {
+                                                        new_prof.created_at =
+                                                            app.profiles[pos].created_at;
                                                         app.profiles[pos] = new_prof.clone();
                                                         app.notify(
                                                             format!(
@@ -199,7 +194,6 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
 }
 
 fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field_w: f32) {
-    // Validation error banner inside modal
     if let Some(ref err) = app.profile_form.validation_error {
         egui::Frame::none()
             .fill(p.error_container)
@@ -212,14 +206,12 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
         ui.add_space(10.0);
     }
 
-    // Profile name
     field_label(ui, p, "Profile name");
     ui.add(
         styled_text_edit(&mut app.profile_form.name, field_w).hint_text("e.g. Corporate Frankfurt"),
     );
     ui.add_space(10.0);
 
-    // Protocol segmented switcher
     field_label(ui, p, "Protocol");
     let seg_w = ((field_w - 8.0) * 0.5).max(100.0);
     ui.horizontal(|ui| {
@@ -263,7 +255,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
     });
     ui.add_space(12.0);
 
-    // Protocol-specific fields
     match app.profile_form.protocol {
         VpnProtocol::OpenVpn => {
             field_label(ui, p, "OpenVPN configuration file (.ovpn)");
@@ -343,7 +334,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
                 });
             ui.add_space(10.0);
 
-            // Server URL + Port side-by-side proportionally
             let port_w = 88.0_f32;
             let server_w = (field_w - port_w - 10.0).max(120.0);
             ui.horizontal(|ui| {
@@ -369,7 +359,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
             });
             ui.add_space(10.0);
 
-            // Authgroup + Interface side-by-side
             let half_w = ((field_w - 10.0) * 0.5).max(100.0);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 10.0;
@@ -405,7 +394,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
     divider(ui, p);
     ui.add_space(10.0);
 
-    // Credentials row (Username + Password with Show/Hide)
     let half_w = ((field_w - 10.0) * 0.5).max(100.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 10.0;
@@ -443,7 +431,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
 
     ui.add_space(10.0);
 
-    // OpenVPN encrypted private key / PKCS#12 passphrase field
     if app.profile_form.protocol == VpnProtocol::OpenVpn {
         let encrypted_detected = app
             .profile_form
@@ -497,7 +484,6 @@ fn render_form_fields(app: &mut KrakenApp, ui: &mut egui::Ui, p: &Palette, field
             .hint_text("Internal notes or gateway description"),
     );
 
-    // Async OpenConnect endpoint test feedback
     if let Some(ref res) = app.openconnect_test_result {
         ui.add_space(10.0);
         let (bg, fg) = if res.success {

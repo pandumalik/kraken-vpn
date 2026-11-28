@@ -1,18 +1,12 @@
-//! OS-specific helpers: Windows Administrator elevation check, relaunch-as-Admin,
-//! Windows Job Object guard (so child VPN processes never leak on exit/crash),
-//! binary path detection, and process-tree termination.
-
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
-/// Windows creation flag to hide console windows for child CLI processes.
 #[cfg(windows)]
 pub const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-/// Configures a `Command` so it does not flash a console window on Windows.
 pub fn configure_background_command(cmd: &mut Command) {
     #[cfg(windows)]
     {
@@ -24,7 +18,6 @@ pub fn configure_background_command(cmd: &mut Command) {
     }
 }
 
-/// Detects whether the current process is running with elevated (Administrator / root) privileges.
 pub fn is_elevated() -> bool {
     #[cfg(windows)]
     {
@@ -61,7 +54,6 @@ pub fn is_elevated() -> bool {
     }
 }
 
-/// Requests Windows UAC elevation by relaunching the current executable via `ShellExecuteW("runas")`.
 pub fn relaunch_as_admin() -> Result<(), String> {
     #[cfg(windows)]
     {
@@ -101,7 +93,6 @@ pub fn relaunch_as_admin() -> Result<(), String> {
     }
 }
 
-/// Terminates a child process and its entire process tree cleanly.
 pub fn terminate_child_tree(child: &mut Child) {
     let pid = child.id();
 
@@ -122,8 +113,6 @@ pub fn terminate_child_tree(child: &mut Child) {
     let _ = pid;
 }
 
-/// Owns a Windows Job Object configured with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`
-/// so all assigned child VPN processes are killed automatically by the OS if Kraken VPN exits.
 pub struct ChildJobGuard {
     #[cfg(windows)]
     handle: windows_sys::Win32::Foundation::HANDLE,
@@ -207,7 +196,6 @@ pub struct BinaryCheckResult {
     pub error: Option<String>,
 }
 
-/// Resolves an executable path (either explicit path or lookup on `PATH`).
 pub fn resolve_binary(configured: &str) -> Option<PathBuf> {
     let trimmed = configured.trim();
     if trimmed.is_empty() {
@@ -218,7 +206,6 @@ pub fn resolve_binary(configured: &str) -> Option<PathBuf> {
         return path.is_file().then(|| path.to_path_buf());
     }
 
-    // Check PATH environment variable
     if let Some(paths) = std::env::var_os("PATH") {
         for dir in std::env::split_paths(&paths) {
             let candidate = dir.join(trimmed);
@@ -235,7 +222,6 @@ pub fn resolve_binary(configured: &str) -> Option<PathBuf> {
         }
     }
 
-    // Check standard Windows install locations when bare executable name isn't on PATH
     #[cfg(windows)]
     {
         let lower = trimmed.to_ascii_lowercase();
@@ -265,7 +251,6 @@ pub fn resolve_binary(configured: &str) -> Option<PathBuf> {
     None
 }
 
-/// Tests whether a VPN binary exists and runs `--version`.
 pub fn check_binary(configured: &str) -> BinaryCheckResult {
     let Some(resolved) = resolve_binary(configured) else {
         return BinaryCheckResult {
@@ -309,7 +294,6 @@ pub fn check_binary(configured: &str) -> BinaryCheckResult {
     }
 }
 
-/// Finds the current process's primary visible top-level window handle (`HWND` as `isize`) on Windows.
 pub fn find_own_main_window() -> isize {
     #[cfg(windows)]
     {
@@ -333,7 +317,7 @@ pub fn find_own_main_window() -> isize {
                 && GetWindow(hwnd, GW_OWNER).is_null()
             {
                 state.found = hwnd as isize;
-                return 0; // stop enumeration
+                return 0;
             }
             1
         }
@@ -353,7 +337,6 @@ pub fn find_own_main_window() -> isize {
     }
 }
 
-/// Restores and focuses a previously hidden/minimized window handle on Windows.
 pub fn restore_window(hwnd_raw: isize) {
     #[cfg(windows)]
     {
@@ -379,7 +362,6 @@ pub fn restore_window(hwnd_raw: isize) {
     }
 }
 
-/// Posts `WM_CLOSE` to the given Windows window handle so the app exits cleanly even if hidden.
 pub fn post_close_window(hwnd_raw: isize) {
     #[cfg(windows)]
     {

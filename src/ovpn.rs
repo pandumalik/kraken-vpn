@@ -1,5 +1,3 @@
-//! OpenVPN `.ovpn` configuration file parser and profile importer.
-
 use std::path::Path;
 use std::sync::OnceLock;
 
@@ -19,7 +17,6 @@ pub struct ParsedOvpn {
     pub has_encrypted_key: bool,
 }
 
-/// Parses an `.ovpn` file's text and filename into structured profile metadata.
 pub fn parse_ovpn(content: &str, filename: &str) -> ParsedOvpn {
     static RE_REMOTE: OnceLock<Regex> = OnceLock::new();
     static RE_PORT: OnceLock<Regex> = OnceLock::new();
@@ -45,7 +42,7 @@ pub fn parse_ovpn(content: &str, filename: &str) -> ParsedOvpn {
         if line.is_empty() || line.starts_with('#') || line.starts_with(';') {
             continue;
         }
-        // Skip inline PEM blocks (<ca>...</ca>, <cert>...</cert>, <key>...</key>, etc.)
+
         if line.starts_with("</") && line.ends_with('>') {
             in_block = false;
             continue;
@@ -119,7 +116,6 @@ pub fn parse_ovpn(content: &str, filename: &str) -> ParsedOvpn {
     }
 }
 
-/// Converts a filename like `uk-lon_prod.ovpn` into `Uk Lon Prod`.
 pub fn humanize_filename(filename: &str) -> String {
     let stem = Path::new(filename)
         .file_stem()
@@ -143,7 +139,6 @@ pub fn humanize_filename(filename: &str) -> String {
     }
 }
 
-/// Builds a `VpnProfile` ready to save from an `.ovpn` file path and contents.
 pub fn profile_from_ovpn(
     path: Option<&Path>,
     filename: &str,

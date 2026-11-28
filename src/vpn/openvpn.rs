@@ -1,6 +1,3 @@
-//! OpenVPN argument builder, secure RAII temporary auth/config file guard,
-//! stdout/stderr event parser, and ephemeral management-port helper.
-
 use std::fs;
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
@@ -9,8 +6,6 @@ use uuid::Uuid;
 
 use crate::models::VpnProfile;
 
-/// RAII guard for temporary files (`.ovpn` config, `--auth-user-pass`, `--askpass`).
-/// Overwrites sensitive files with zeroes before unlinking on Drop.
 #[derive(Debug)]
 pub struct SecureTempFile {
     path: PathBuf,
@@ -66,7 +61,6 @@ pub enum OpenVpnEvent {
     Log,
 }
 
-/// Allocates a free localhost port for OpenVPN's `--management` socket.
 pub fn pick_ephemeral_management_port() -> Option<u16> {
     TcpListener::bind(("127.0.0.1", 0))
         .ok()
@@ -74,7 +68,6 @@ pub fn pick_ephemeral_management_port() -> Option<u16> {
         .map(|a| a.port())
 }
 
-/// Resolves the OpenVPN config source and prepares any required temporary files.
 pub struct PreparedOpenVpn {
     pub args: Vec<String>,
     pub management_port: Option<u16>,
@@ -82,8 +75,6 @@ pub struct PreparedOpenVpn {
     pub _temp_files: Vec<SecureTempFile>,
 }
 
-/// Returns true if the `.ovpn` config contains a bare `auth-user-pass` directive
-/// (without an explicit credentials file path) outside comments and inline PEM blocks.
 pub fn config_requires_interactive_auth(config_text: &str) -> bool {
     let mut in_block = false;
     for raw_line in config_text.lines() {
@@ -105,8 +96,6 @@ pub fn config_requires_interactive_auth(config_text: &str) -> bool {
         let mut parts = line.split_whitespace();
         if let Some(directive) = parts.next() {
             if directive.eq_ignore_ascii_case("auth-user-pass") {
-                // Only requires interactive/profile credentials if no file argument follows
-                // (ignore trailing inline comments starting with # or ;).
                 let next_arg = parts.next();
                 if next_arg.is_none()
                     || next_arg.is_some_and(|a| a.starts_with('#') || a.starts_with(';'))
@@ -119,7 +108,6 @@ pub fn config_requires_interactive_auth(config_text: &str) -> bool {
     false
 }
 
-/// Returns true if the `.ovpn` config contains an encrypted inline private key or `<pkcs12>` bundle.
 pub fn config_has_encrypted_key(config_text: &str) -> bool {
     config_text.contains("ENCRYPTED PRIVATE KEY")
         || config_text.contains("Proc-Type: 4,ENCRYPTED")
@@ -127,14 +115,12 @@ pub fn config_has_encrypted_key(config_text: &str) -> bool {
         || config_text.to_ascii_lowercase().contains("<pkcs12>")
 }
 
-/// Returns true for generic OpenVPN footer lines that shouldn't overwrite a more specific error.
 pub fn is_generic_fatal_footer(line: &str) -> bool {
     let lower = line.to_ascii_lowercase();
     lower.contains("exiting due to fatal error")
         || lower.contains("use --help for more information")
 }
 
-/// Strips a leading OpenVPN timestamp (`YYYY-MM-DD HH:MM:SS `) for concise UI/history messages.
 pub fn strip_openvpn_timestamp(line: &str) -> &str {
     let trimmed = line.trim();
     let bytes = trimmed.as_bytes();
@@ -155,7 +141,6 @@ pub fn strip_openvpn_timestamp(line: &str) -> &str {
 pub fn prepare_openvpn(profile: &VpnProfile, temp_dir: &Path) -> Result<PreparedOpenVpn, String> {
     let mut temp_files = Vec::new();
 
-    // Preserve the original `.ovpn` parent directory so relative ca/cert/key/tls-auth paths resolve.
     let working_dir = profile
         .ovpn_path
         .as_deref()
@@ -164,7 +149,6 @@ pub fn prepare_openvpn(profile: &VpnProfile, temp_dir: &Path) -> Result<Prepared
         .and_then(|p| Path::new(p).parent().map(Path::to_path_buf))
         .filter(|dir| dir.is_dir());
 
-    // Determine config file path and inspect content for auth directives.
     let (config_path, config_text): (PathBuf, String) = if let Some(inline) = profile
         .ovpn_content
         .as_deref()
@@ -196,11 +180,6 @@ pub fn prepare_openvpn(profile: &VpnProfile, temp_dir: &Path) -> Result<Prepared
     let has_creds = !profile.username.trim().is_empty() || !profile.password.is_empty();
     let has_encrypted_key = config_has_encrypted_key(&config_text);
 
-    // Resolve private key / PKCS#12 passphrase:
-    // 1. Explicit `key_passphrase` always wins.
-    // 2. If the config has an encrypted key and `key_passphrase` is blank, fall back to `password`
-    //    so users who entered their key password in the Password field connect cleanly even if
-    //    they also filled in Username.
     let resolved_askpass = if !profile.key_passphrase.is_empty() {
         Some(profile.key_passphrase.as_str())
     } else if has_encrypted_key && !profile.password.is_empty() {
@@ -267,7 +246,6 @@ pub fn prepare_openvpn(profile: &VpnProfile, temp_dir: &Path) -> Result<Prepared
     })
 }
 
-/// Pure argument builder for OpenVPN CLI (never includes raw secrets).
 pub fn build_openvpn_args(
     config_path: &Path,
     auth_file: Option<&Path>,
@@ -294,7 +272,6 @@ pub fn build_openvpn_args(
     args
 }
 
-/// Parses a single stdout/stderr line from `openvpn`.
 pub fn parse_openvpn_line(line: &str) -> OpenVpnEvent {
     let trimmed = line.trim();
     let lower = trimmed.to_ascii_lowercase();
@@ -433,12 +410,9 @@ mod tests {
                 .into(),
         );
 
-        // Missing passphrase should fail cleanly before spawning
         let err = prepare_openvpn(&prof, &dir).err().unwrap();
         assert!(err.contains("Private Key Passphrase"));
 
-        // Even when username + password are filled (without explicit key_passphrase),
-        // password must be forwarded to --askpass (not lost to --auth-user-pass).
         prof.username = "pandu".into();
         prof.password = "my-key-pass".into();
         let prepared = prepare_openvpn(&prof, &dir).unwrap();
@@ -456,7 +430,6 @@ mod tests {
             "should not pass --auth-user-pass when config has no auth-user-pass"
         );
 
-        // Explicit key_passphrase works alongside auth-user-pass
         prof.ovpn_content = Some(
             "client\ndev tun\nremote vpn.example 1194\nauth-user-pass\n<pkcs12>\nMII\n</pkcs12>\n"
                 .into(),

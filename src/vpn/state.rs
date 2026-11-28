@@ -1,5 +1,3 @@
-//! Strictly mutually exclusive single-active-VPN state machine.
-
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -57,16 +55,6 @@ impl TunnelState {
         )
     }
 
-    pub fn status_label(&self) -> &'static str {
-        match self {
-            TunnelState::Disconnected => "Disconnected",
-            TunnelState::Connecting { .. } => "Connecting",
-            TunnelState::Connected { .. } => "Connected",
-            TunnelState::Disconnecting { .. } => "Disconnecting",
-            TunnelState::Error { .. } => "Error",
-        }
-    }
-
     pub fn connected_duration_secs(&self, now: DateTime<Utc>) -> u64 {
         match self {
             TunnelState::Connected { connected_at, .. } => now
@@ -80,20 +68,20 @@ impl TunnelState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConnectDecision {
-    /// No tunnel is active; start immediately.
     StartNow,
-    /// The requested profile is already connecting or connected.
+
     AlreadyActive,
-    /// Another tunnel is active and policy is `AutoSwitch`; disconnect it first.
+
     DisconnectThenSwitch {
         active_profile_id: Uuid,
         active_profile_name: String,
     },
-    /// Another tunnel is active and policy is `RefuseWhileActive`.
-    Refused { active_profile_name: String },
+
+    Refused {
+        active_profile_name: String,
+    },
 }
 
-/// Pure transition guard enforcing the single-active-VPN invariant.
 pub fn decide_connect(
     current: &TunnelState,
     target_profile_id: Uuid,

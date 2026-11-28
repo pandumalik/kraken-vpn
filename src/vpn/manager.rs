@@ -1,5 +1,3 @@
-//! Thread-safe single-active-VPN process orchestrator with guaranteed cleanup.
-
 use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
@@ -7,7 +5,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -97,7 +95,6 @@ impl ManagerInner {
     }
 }
 
-/// Manages at most ONE active VPN tunnel at any point in time.
 #[derive(Clone)]
 pub struct VpnManager {
     inner: Arc<Mutex<ManagerInner>>,
@@ -173,12 +170,10 @@ impl VpnManager {
         self.inner.lock().unwrap().telemetry.reset_counters();
     }
 
-    /// Connects to `profile`, strictly enforcing single-active-VPN mutual exclusion.
     pub fn connect(&self, profile: VpnProfile, settings: &AppSettings) -> Result<(), String> {
         self.connect_internal(profile, settings, None, false)
     }
 
-    /// Saves/uses an explicitly trusted certificate pin and connects cleanly.
     pub fn trust_cert_and_connect(
         &self,
         mut profile: VpnProfile,
@@ -253,7 +248,6 @@ impl VpnManager {
         }
     }
 
-    /// Cleanly disconnects any active tunnel, kills its process tree, and deletes temp files.
     pub fn disconnect(&self) {
         self.disconnect_sync("Disconnected by user");
     }
@@ -585,8 +579,6 @@ impl VpnManager {
             guard.assign(&child);
         }
 
-        // Write password immediately for `--passwd-on-stdin` and close stdin so OpenConnect
-        // never deadlocks waiting on interactive console input on Windows.
         let mut password_sent_upfront = false;
         if let Some(mut stdin_writer) = child.stdin.take() {
             if !profile.password.is_empty() {
@@ -595,7 +587,6 @@ impl VpnManager {
                 password_sent_upfront = true;
             }
         }
-        let stdin: Option<Arc<Mutex<std::process::ChildStdin>>> = None;
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
         let session_id = Uuid::new_v4();
@@ -690,9 +681,7 @@ impl VpnManager {
         let capture_for_oc = error_capture.clone();
 
         reader_handles.push(std::thread::spawn(move || {
-            let mut password_sent = password_sent_upfront;
             let mut detected_pin: Option<String> = None;
-            let mut last_cert_ack = Instant::now() - Duration::from_secs(10);
             let mut line_buf = String::new();
 
             while let Ok(chunk) = rx.recv() {
@@ -712,12 +701,8 @@ impl VpnManager {
                         session_id,
                         &profile_clone,
                         &endpoint,
-                        &settings_clone,
                         &line,
-                        &stdin,
-                        &mut password_sent,
                         &mut detected_pin,
-                        &mut last_cert_ack,
                         &capture_for_oc,
                     );
                 }
@@ -736,12 +721,8 @@ impl VpnManager {
                             session_id,
                             &profile_clone,
                             &endpoint,
-                            &settings_clone,
                             &rem,
-                            &stdin,
-                            &mut password_sent,
                             &mut detected_pin,
-                            &mut last_cert_ack,
                             &capture_for_oc,
                         );
                         line_buf.clear();
@@ -787,7 +768,6 @@ impl VpnManager {
                 }
             }
 
-            // Flush any trailing line without newline before exiting reader
             let trailing = line_buf.trim().to_string();
             if !trailing.is_empty() && !stop_reader.load(Ordering::SeqCst) {
                 handle_openconnect_chunk(
@@ -795,12 +775,8 @@ impl VpnManager {
                     session_id,
                     &profile_clone,
                     &endpoint,
-                    &settings_clone,
                     &trailing,
-                    &stdin,
-                    &mut password_sent,
                     &mut detected_pin,
-                    &mut last_cert_ack,
                     &capture_for_oc,
                 );
             }
@@ -876,8 +852,6 @@ impl VpnManager {
                 }
             };
             if let Some(status) = exit_status {
-                // Drain stdout/stderr reader threads FIRST so all startup errors are captured
-                // in Live Logs, History, and the Home error banner before finalizing state.
                 for handle in reader_handles {
                     let _ = handle.join();
                 }
@@ -966,7 +940,7 @@ impl VpnManager {
 
 impl Drop for VpnManager {
     fn drop(&mut self) {
-        if Arc::strong_count(&self.inner) <= 2 {
+        if Arc::strong_count(&self.inner) == 1 {
             self.disconnect_sync("Application closed");
         }
     }
@@ -986,18 +960,13 @@ impl Read for BoxedReader {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_openconnect_chunk(
     inner: &Arc<Mutex<ManagerInner>>,
     session_id: Uuid,
     profile: &VpnProfile,
     endpoint: &str,
-    settings: &AppSettings,
     text: &str,
-    stdin: &Option<Arc<Mutex<std::process::ChildStdin>>>,
-    password_sent: &mut bool,
     detected_pin: &mut Option<String>,
-    last_cert_ack: &mut Instant,
     error_capture: &Arc<Mutex<SessionErrorCapture>>,
 ) {
     let events = parse_openconnect_output(text);
@@ -1026,42 +995,6 @@ fn handle_openconnect_chunk(
                     format!("Detected server cert pin: {pin}"),
                 );
                 logged = true;
-            }
-            OpenConnectEvent::CertPrompt => {
-                if settings.auto_trust_server_cert
-                    && last_cert_ack.elapsed() > Duration::from_millis(500)
-                {
-                    *last_cert_ack = Instant::now();
-                    if let Some(ref s) = stdin {
-                        if let Ok(mut w) = s.lock() {
-                            let _ = writeln!(w, "yes");
-                            let _ = w.flush();
-                        }
-                    }
-                    g.push_log(
-                        LogLevel::System,
-                        "OpenConnect",
-                        "Auto-accepted server certificate prompt (per Settings).",
-                    );
-                }
-            }
-            OpenConnectEvent::PasswordPrompt => {
-                if !*password_sent {
-                    *password_sent = true;
-                    if let Some(ref s) = stdin {
-                        if let Ok(mut w) = s.lock() {
-                            // Never log profile.password!
-                            let _ = writeln!(w, "{}", profile.password);
-                            let _ = w.flush();
-                        }
-                    }
-                    g.push_log(
-                        LogLevel::System,
-                        "OpenConnect",
-                        "Submitted password via stdin.",
-                    );
-                    logged = true;
-                }
             }
             OpenConnectEvent::Connected => {
                 if still_active && !g.state.is_connected() {
@@ -1101,7 +1034,9 @@ fn handle_openconnect_chunk(
                 g.push_log(LogLevel::Error, "OpenConnect", msg);
                 logged = true;
             }
-            OpenConnectEvent::Log => {}
+            OpenConnectEvent::CertPrompt
+            | OpenConnectEvent::PasswordPrompt
+            | OpenConnectEvent::Log => {}
         }
     }
 

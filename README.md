@@ -2,8 +2,6 @@
 
 Kraken VPN is a lightweight, 100% pure Rust desktop VPN manager built with `egui`/`eframe`. It centralizes multiple **OpenVPN** and **OpenConnect** (`anyconnect`, `fortinet`, `gp`/GlobalProtect, `pulse`, `nc`/Juniper) profiles inside a single native Windows application while strictly enforcing **at most one active VPN tunnel at a time**.
 
-> The original Electron JS implementation is preserved for reference under [`legacy-electron/`](./legacy-electron/).
-
 ---
 
 ## Installation (Windows)
@@ -85,16 +83,16 @@ kraken-vpn/
 ├── installer/
 │   ├── kraken-vpn.iss        # Inno Setup 6 script (auto-detects & downloads VPN engines)
 │   └── build-installer.ps1   # Local & CI helper to generate .ico and compile Setup .exe
-├── legacy-electron/          # Original Electron JS version (reference)
 ├── src/
-│   ├── main.rs               # CLI flags (--version, --check), icon loader, eframe bootstrap
+│   ├── main.rs               # CLI flags (--version, --check), icon loader, UAC elevation, eframe bootstrap
 │   ├── lib.rs                # Library exports
 │   ├── models.rs             # Profiles, protocols, theme presets/colors, settings, history
 │   ├── secrets.rs            # Windows DPAPI credential encryption/decryption
 │   ├── store.rs              # Atomic JSON persistence in %APPDATA%\KrakenVPN\
 │   ├── ovpn.rs               # .ovpn directive parser & profile importer
-│   ├── platform.rs           # Win32 Admin check, UAC relaunch, Job Object guard, binary resolver
+│   ├── platform.rs           # Win32 Admin check, UAC relaunch, Job Object guard, window/binary helpers
 │   ├── telemetry.rs          # sysinfo::Networks live speed/bytes tracker & formatters
+│   ├── tray.rs               # Windows system tray icon & menu controller
 │   ├── vpn/
 │   │   ├── mod.rs            # VPN module exports
 │   │   ├── state.rs          # Mutually exclusive single-active-VPN state machine

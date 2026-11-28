@@ -38,7 +38,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
     let p = app.palette();
 
     page_container(ui, 920.0, |ui| {
-        // Page Header
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 2.0;
@@ -97,7 +96,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
             .filter(|e| matches!(e.level, LogLevel::Error))
             .count();
 
-        // View switcher + filter toolbar
         ui.horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing = Vec2::new(6.0, 6.0);
 
@@ -192,7 +190,6 @@ fn render_console_terminal(
         TunnelState::Disconnected => "idle · ready to monitor".to_string(),
     };
 
-    // Dedicated high-contrast terminal palette (crisp dark console in both Light & Dark themes)
     let term_bg = Color32::from_rgb(13, 17, 15);
     let term_header_bg = Color32::from_rgb(20, 25, 22);
     let term_border = p.outline_variant;
@@ -217,7 +214,6 @@ fn render_console_terminal(
             ui.set_min_width(card_w);
             ui.set_max_width(card_w);
 
-            // Terminal title / live telemetry header bar
             egui::Frame::none()
                 .fill(term_header_bg)
                 .rounding(Rounding {
@@ -257,7 +253,6 @@ fn render_console_terminal(
                     });
                 });
 
-            // Hairline separator between terminal header and stream
             let (div_rect, _) =
                 ui.allocate_exact_size(Vec2::new(ui.available_width(), 1.0), egui::Sense::hover());
             ui.painter().line_segment(

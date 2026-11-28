@@ -14,7 +14,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
     let mut changed = false;
 
     page_container(ui, 820.0, |ui| {
-        // Page Header
         ui.vertical(|ui| {
             ui.spacing_mut().item_spacing.y = 2.0;
             ui.label(semibold("Settings", 23.0, p.on_surface));
@@ -29,7 +28,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
         ui.add_space(20.0);
 
-        // Group 1: Connection & Switch Policy
         section_card(&p, ui, "Connection", |ui| {
             let mut auto_switch = app.settings.switch_policy == SwitchPolicy::AutoSwitch;
             setting_toggle_row(
@@ -71,7 +69,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
         ui.add_space(16.0);
 
-        // Group 2: VPN CLI Executables
         section_card(&p, ui, "VPN CLI executables", |ui| {
             binary_path_row(
                 ui,
@@ -98,9 +95,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
         ui.add_space(16.0);
 
-        // Group 3: Appearance & Local Storage
         section_card(&p, ui, "Appearance & storage", |ui| {
-            // Theme switcher row
             egui::Frame::none()
                 .inner_margin(Margin::symmetric(20.0, 14.0))
                 .show(ui, |ui| {
@@ -157,7 +152,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
             divider(ui, &p);
 
-            // Color presets + collapsible compact custom color editor
             egui::Frame::none()
                 .inner_margin(Margin::symmetric(20.0, 14.0))
                 .show(ui, |ui| {
@@ -347,7 +341,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
             divider(ui, &p);
 
-            // Local data & DPAPI info row
             egui::Frame::none()
                 .inner_margin(Margin::symmetric(20.0, 14.0))
                 .show(ui, |ui| {
@@ -385,7 +378,6 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
 
             divider(ui, &p);
 
-            // Reset preferences row
             egui::Frame::none()
                 .inner_margin(Margin::symmetric(20.0, 14.0))
                 .show(ui, |ui| {
@@ -510,7 +502,6 @@ fn binary_path_row(
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 8.0;
 
-                // Title + compact status badge (wraps cleanly if window is narrow)
                 ui.horizontal_wrapped(|ui| {
                     ui.label(semibold(label, 13.5, p.on_surface));
                     if let Some(ref res) = check_result {
@@ -539,7 +530,6 @@ fn binary_path_row(
                     }
                 });
 
-                // Right-to-left layout allocates Download (if missing), Test & Browse first so TextEdit fills exact remaining width
                 let is_missing = check_result.as_ref().is_some_and(|r| !r.found);
                 ui.allocate_ui_with_layout(
                     Vec2::new(row_w, CONTROL_HEIGHT),
@@ -576,7 +566,6 @@ fn binary_path_row(
                     },
                 );
 
-                // Full wrapped version details or error message below input
                 if let Some(ref res) = check_result {
                     if res.found {
                         if let Some(ref full_ver) = res.version_line {
