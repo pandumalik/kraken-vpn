@@ -205,20 +205,14 @@ pub fn preset_colors(mode: ThemeMode, preset: ColorPreset) -> CustomThemeColors 
 }
 
 pub fn active_theme_colors(settings: &AppSettings) -> CustomThemeColors {
-    let custom = match settings.theme {
-        ThemeMode::Light => settings.custom_light_colors,
-        ThemeMode::Dark => settings.custom_dark_colors,
-    };
-    custom.unwrap_or_else(|| preset_colors(settings.theme, settings.color_preset))
+    settings
+        .active_custom_colors()
+        .unwrap_or_else(|| preset_colors(settings.theme, settings.color_preset))
 }
 
 impl Palette {
     pub fn from_settings(settings: &AppSettings) -> Self {
-        let custom = match settings.theme {
-            ThemeMode::Light => settings.custom_light_colors,
-            ThemeMode::Dark => settings.custom_dark_colors,
-        };
-        match custom {
+        match settings.active_custom_colors() {
             Some(c) => Self::from_custom(settings.theme, &c),
             None => Self::from_preset(settings.theme, settings.color_preset),
         }
@@ -491,6 +485,54 @@ pub fn table_card_frame(p: &Palette) -> egui::Frame {
         .rounding(Rounding::same(12.0))
         .stroke(Stroke::new(1.0_f32, p.outline_variant))
         .inner_margin(Margin::same(0.0))
+}
+
+pub fn card_header_frame(p: &Palette, margin: Margin) -> egui::Frame {
+    egui::Frame::none()
+        .fill(p.surface_low)
+        .rounding(Rounding {
+            nw: 11.0,
+            ne: 11.0,
+            sw: 0.0,
+            se: 0.0,
+        })
+        .inner_margin(margin)
+}
+
+pub fn modal_card_frame(p: &Palette, margin: Margin) -> egui::Frame {
+    egui::Frame::none()
+        .fill(p.surface_lowest)
+        .rounding(Rounding::same(12.0))
+        .stroke(Stroke::new(1.0_f32, p.outline_variant))
+        .shadow(egui::epaint::Shadow {
+            offset: Vec2::new(0.0, 10.0),
+            blur: 28.0,
+            spread: 0.0,
+            color: Color32::from_black_alpha(52),
+        })
+        .inner_margin(margin)
+}
+
+pub fn page_header(ui: &mut Ui, p: &Palette, title: &str, subtitle: &str) {
+    ui.vertical(|ui| {
+        ui.spacing_mut().item_spacing.y = 2.0;
+        ui.label(semibold(title, 23.0, p.on_surface));
+        ui.label(
+            RichText::new(subtitle)
+                .size(13.5)
+                .color(p.on_surface_variant),
+        );
+    });
+}
+
+pub fn table_header_cell(ui: &mut Ui, p: &Palette, text: &str, width: f32) {
+    ui.allocate_ui_with_layout(
+        Vec2::new(width, 18.0),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.label(semibold(text, 11.5, p.on_surface_variant));
+        },
+    );
 }
 
 pub fn divider(ui: &mut Ui, p: &Palette) {

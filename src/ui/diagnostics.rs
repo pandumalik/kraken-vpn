@@ -3,8 +3,9 @@ use eframe::egui::{self, Color32, FontId, Margin, RichText, Rounding, Stroke, Te
 use crate::models::{DiagnosticsLine, HistoryStatus, LogLevel};
 use crate::telemetry::format_duration;
 use crate::ui::theme::{
-    destructive_button, divider, page_container, pill_badge, secondary_button, semibold,
-    styled_text_edit, table_card_frame, tunnel_status_style, Palette,
+    card_header_frame, destructive_button, divider, page_container, page_header, pill_badge,
+    secondary_button, semibold, styled_text_edit, table_card_frame, table_header_cell,
+    tunnel_status_style, Palette,
 };
 use crate::ui::KrakenApp;
 use crate::vpn::state::TunnelState;
@@ -34,20 +35,17 @@ impl LogLevelFilter {
     }
 }
 
-pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
+pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, state: &TunnelState) {
     let p = app.palette();
 
     page_container(ui, 920.0, |ui| {
         ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing.y = 2.0;
-                ui.label(semibold("Logs", 23.0, p.on_surface));
-                ui.label(
-                    RichText::new("Connection events, client output, and session history")
-                        .size(13.5)
-                        .color(p.on_surface_variant),
-                );
-            });
+            page_header(
+                ui,
+                &p,
+                "Logs",
+                "Connection events, client output, and session history",
+            );
             ui.with_layout(
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| match app.diagnostics_subtab {
@@ -57,8 +55,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
                         }
                         if secondary_button(ui, &p, "Copy logs").clicked() {
                             let all_text = app
-                                .manager
-                                .diagnostics_snapshot()
+                                .logs_snapshot()
                                 .iter()
                                 .map(|l| l.format_line())
                                 .collect::<Vec<_>>()
@@ -82,19 +79,22 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(18.0);
 
-        let lines = app.manager.diagnostics_snapshot();
-        let info_count = lines
-            .iter()
-            .filter(|e| matches!(e.level, LogLevel::Info | LogLevel::System))
-            .count();
-        let warn_count = lines
-            .iter()
-            .filter(|e| matches!(e.level, LogLevel::Warn))
-            .count();
-        let err_count = lines
-            .iter()
-            .filter(|e| matches!(e.level, LogLevel::Error))
-            .count();
+        let (total_count, info_count, warn_count, err_count) = {
+            let lines = app.logs_snapshot();
+            let info = lines
+                .iter()
+                .filter(|e| matches!(e.level, LogLevel::Info | LogLevel::System))
+                .count();
+            let warn = lines
+                .iter()
+                .filter(|e| matches!(e.level, LogLevel::Warn))
+                .count();
+            let err = lines
+                .iter()
+                .filter(|e| matches!(e.level, LogLevel::Error))
+                .count();
+            (lines.len(), info, warn, err)
+        };
 
         ui.horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing = Vec2::new(6.0, 6.0);
@@ -117,7 +117,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
             if app.diagnostics_subtab == DiagnosticsSubtab::Console {
                 ui.add_space(8.0);
                 for (lvl, label) in [
-                    (LogLevelFilter::All, format!("All ({})", lines.len())),
+                    (LogLevelFilter::All, format!("All ({total_count})")),
                     (LogLevelFilter::Info, format!("Info ({info_count})")),
                     (LogLevelFilter::Warn, format!("Warn ({warn_count})")),
                     (LogLevelFilter::Error, format!("Error ({err_count})")),
@@ -141,7 +141,10 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
         ui.add_space(12.0);
 
         match app.diagnostics_subtab {
-            DiagnosticsSubtab::Console => render_console_terminal(app, ui, &p, &lines),
+            DiagnosticsSubtab::Console => {
+                let _ = app.logs_snapshot();
+                render_console_terminal(app, ui, &p, state, &app.cached_logs);
+            }
             DiagnosticsSubtab::History => render_history_table(app, ui, &p),
         }
     });
@@ -151,6 +154,7 @@ fn render_console_terminal(
     app: &KrakenApp,
     ui: &mut egui::Ui,
     p: &Palette,
+    state: &TunnelState,
     lines: &[DiagnosticsLine],
 ) {
     let filter_lower = app.console_filter.trim().to_ascii_lowercase();
@@ -165,9 +169,8 @@ fn render_console_terminal(
         })
         .collect();
 
-    let state = app.manager.state();
-    let (status_bg, status_fg, status_dot, status_label) = tunnel_status_style(p, &state);
-    let session_meta = match &state {
+    let (status_bg, status_fg, status_dot, status_label) = tunnel_status_style(p, state);
+    let session_meta = match state {
         TunnelState::Connected {
             profile_name,
             endpoint,
@@ -410,27 +413,18 @@ fn render_history_table(app: &KrakenApp, ui: &mut egui::Ui, p: &Palette) {
             (total_w - col_profile - col_proto - col_status - col_started - col_dur - 72.0)
                 .max(80.0);
 
-        egui::Frame::none()
-            .fill(p.surface_low)
-            .rounding(Rounding {
-                nw: 11.0,
-                ne: 11.0,
-                sw: 0.0,
-                se: 0.0,
-            })
-            .inner_margin(Margin::symmetric(16.0, 10.0))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 8.0;
-                    header_col(ui, p, "Profile", col_profile);
-                    header_col(ui, p, "Protocol", col_proto);
-                    header_col(ui, p, "Status", col_status);
-                    header_col(ui, p, "Started", col_started);
-                    header_col(ui, p, "Duration", col_dur);
-                    ui.label(semibold("Details", 11.5, p.on_surface_variant));
-                });
+        card_header_frame(p, Margin::symmetric(16.0, 10.0)).show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 8.0;
+                table_header_cell(ui, p, "Profile", col_profile);
+                table_header_cell(ui, p, "Protocol", col_proto);
+                table_header_cell(ui, p, "Status", col_status);
+                table_header_cell(ui, p, "Started", col_started);
+                table_header_cell(ui, p, "Duration", col_dur);
+                ui.label(semibold("Details", 11.5, p.on_surface_variant));
             });
+        });
         divider(ui, p);
 
         for (i, h) in app.history.iter().enumerate() {
@@ -583,14 +577,4 @@ fn filter_pill(ui: &mut egui::Ui, p: &Palette, label: &str, active: bool, on_cli
     if ui.add(btn).clicked() {
         on_click();
     }
-}
-
-fn header_col(ui: &mut egui::Ui, p: &Palette, text: &str, width: f32) {
-    ui.allocate_ui_with_layout(
-        Vec2::new(width, 18.0),
-        egui::Layout::left_to_right(egui::Align::Center),
-        |ui| {
-            ui.label(semibold(text, 11.5, p.on_surface_variant));
-        },
-    );
 }

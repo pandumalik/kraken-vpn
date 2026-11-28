@@ -5,28 +5,20 @@ use uuid::Uuid;
 use crate::models::{SwitchPolicy, VpnProfile, VpnProtocol};
 use crate::telemetry::{format_bytes, format_duration, format_speed};
 use crate::ui::theme::{
-    card_frame, destructive_button, divider, page_container, pill_badge, primary_button,
-    row_danger_button, row_primary_button, row_secondary_button, secondary_button, semibold,
-    styled_text_edit, table_card_frame, tunnel_status_style, Palette,
+    card_frame, card_header_frame, destructive_button, divider, page_container, page_header,
+    pill_badge, primary_button, row_danger_button, row_primary_button, row_secondary_button,
+    secondary_button, semibold, styled_text_edit, table_card_frame, table_header_cell,
+    tunnel_status_style, Palette,
 };
 use crate::ui::{KrakenApp, NavTab};
 use crate::vpn::state::TunnelState;
 
-pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
+pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, state: &TunnelState) {
     let p = app.palette();
-    let state = app.manager.state();
 
     page_container(ui, 920.0, |ui| {
         ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing.y = 2.0;
-                ui.label(semibold("Home", 23.0, p.on_surface));
-                ui.label(
-                    RichText::new("Manage your VPN connections")
-                        .size(13.5)
-                        .color(p.on_surface_variant),
-                );
-            });
+            page_header(ui, &p, "Home", "Manage your VPN connections");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if primary_button(ui, &p, "+ Add profile").clicked() {
                     app.open_new_profile_modal(VpnProtocol::OpenVpn);
@@ -39,11 +31,11 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(20.0);
 
-        render_active_tunnel_card(app, ui, &p, &state);
+        render_active_tunnel_card(app, ui, &p, state);
 
         ui.add_space(24.0);
 
-        render_saved_profiles_table(app, ui, &p, &state);
+        render_saved_profiles_table(app, ui, &p, state);
     });
 }
 
@@ -328,27 +320,18 @@ fn render_saved_profiles_table(
         let col_action = 205.0_f32.min(total_w * 0.34);
         let col_gateway = (total_w - col_profile - col_proto - col_action - 48.0).max(80.0);
 
-        egui::Frame::none()
-            .fill(p.surface_low)
-            .rounding(Rounding {
-                nw: 11.0,
-                ne: 11.0,
-                sw: 0.0,
-                se: 0.0,
-            })
-            .inner_margin(Margin::symmetric(18.0, 10.0))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 8.0;
-                    header_cell(ui, p, "Profile", col_profile);
-                    header_cell(ui, p, "Protocol", col_proto);
-                    header_cell(ui, p, "Gateway", col_gateway);
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(semibold("Action", 11.5, p.on_surface_variant));
-                    });
+        card_header_frame(p, Margin::symmetric(18.0, 10.0)).show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 8.0;
+                table_header_cell(ui, p, "Profile", col_profile);
+                table_header_cell(ui, p, "Protocol", col_proto);
+                table_header_cell(ui, p, "Gateway", col_gateway);
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(semibold("Action", 11.5, p.on_surface_variant));
                 });
             });
+        });
         divider(ui, p);
 
         let filtered: Vec<&VpnProfile> = app
@@ -495,14 +478,4 @@ fn render_saved_profiles_table(
     if let Some(id) = delete_target {
         app.delete_confirm_id = Some(id);
     }
-}
-
-fn header_cell(ui: &mut egui::Ui, p: &Palette, text: &str, width: f32) {
-    ui.allocate_ui_with_layout(
-        Vec2::new(width, 18.0),
-        egui::Layout::left_to_right(egui::Align::Center),
-        |ui| {
-            ui.label(semibold(text, 11.5, p.on_surface_variant));
-        },
-    );
 }

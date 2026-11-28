@@ -16,8 +16,8 @@ use eframe::egui::{
 use uuid::Uuid;
 
 use crate::models::{
-    AppSettings, ConnectionHistoryEntry, LogLevel, OpenConnectProtocol, ThemeMode, VpnProfile,
-    VpnProtocol,
+    AppSettings, ConnectionHistoryEntry, DiagnosticsLine, LogLevel, OpenConnectProtocol, ThemeMode,
+    VpnProfile, VpnProtocol,
 };
 use crate::ovpn::profile_from_ovpn;
 use crate::platform::{check_binary, is_elevated, relaunch_as_admin, BinaryCheckResult};
@@ -25,8 +25,9 @@ use crate::store::ProfileStore;
 use crate::telemetry::{format_duration, TelemetrySnapshot};
 use crate::tray::TrayController;
 use crate::ui::theme::{
-    apply_stitch_theme, destructive_button, divider, install_fonts, primary_button,
-    responsive_modal_size, secondary_button, semibold, tunnel_status_style, Palette,
+    apply_stitch_theme, destructive_button, divider, install_fonts, modal_card_frame,
+    primary_button, responsive_modal_size, secondary_button, semibold, tunnel_status_style,
+    Palette,
 };
 use crate::vpn::manager::VpnManager;
 use crate::vpn::openconnect::OpenConnectTestResult;
@@ -224,6 +225,8 @@ pub struct KrakenApp {
     pub tray: Option<TrayController>,
     pub last_tray_tooltip: String,
     pub quit_requested: bool,
+    pub cached_logs: Vec<DiagnosticsLine>,
+    pub cached_logs_version: u64,
 }
 
 impl KrakenApp {
@@ -297,7 +300,18 @@ impl KrakenApp {
             tray,
             last_tray_tooltip: "Kraken VPN".to_string(),
             quit_requested: false,
+            cached_logs: Vec::new(),
+            cached_logs_version: u64::MAX,
         }
+    }
+
+    pub fn logs_snapshot(&mut self) -> &[DiagnosticsLine] {
+        let ver = self.manager.diagnostics_version();
+        if ver != self.cached_logs_version {
+            self.cached_logs = self.manager.diagnostics_snapshot();
+            self.cached_logs_version = ver;
+        }
+        &self.cached_logs
     }
 
     pub fn palette(&self) -> Palette {
@@ -426,9 +440,8 @@ impl KrakenApp {
         }
     }
 
-    fn render_sidebar(&mut self, ctx: &egui::Context) {
+    fn render_sidebar(&mut self, ctx: &egui::Context, state: &TunnelState) {
         let p = self.palette();
-        let state = self.manager.state();
 
         egui::SidePanel::left("kraken_sidebar")
             .resizable(false)
@@ -528,7 +541,7 @@ impl KrakenApp {
 
                     ui.add_space(8.0);
 
-                    let (_, _, dot_col, status_txt) = tunnel_status_style(&p, &state);
+                    let (_, _, dot_col, status_txt) = tunnel_status_style(&p, state);
                     let detail_line = match &state {
                         TunnelState::Connected { endpoint, .. } => {
                             let dur = format_duration(state.connected_duration_secs(Utc::now()));
@@ -580,18 +593,7 @@ impl KrakenApp {
             .order(Order::Foreground)
             .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
             .show(ctx, |ui| {
-                egui::Frame::none()
-                    .fill(p.surface_lowest)
-                    .rounding(Rounding::same(12.0))
-                    .stroke(Stroke::new(1.0_f32, p.outline_variant))
-                    .shadow(egui::epaint::Shadow {
-                        offset: Vec2::new(0.0, 10.0),
-                        blur: 28.0,
-                        spread: 0.0,
-                        color: Color32::from_black_alpha(50),
-                    })
-                    .inner_margin(Margin::same(22.0))
-                    .show(ui, |ui| {
+                modal_card_frame(&p, Margin::same(22.0)).show(ui, |ui| {
                         ui.set_width(size.x - 44.0);
                         ui.label(semibold("Verify server certificate", 17.0, p.on_surface));
                         ui.add_space(6.0);
@@ -696,18 +698,7 @@ impl KrakenApp {
             .order(Order::Foreground)
             .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
             .show(ctx, |ui| {
-                egui::Frame::none()
-                    .fill(p.surface_lowest)
-                    .rounding(Rounding::same(12.0))
-                    .stroke(Stroke::new(1.0_f32, p.outline_variant))
-                    .shadow(egui::epaint::Shadow {
-                        offset: Vec2::new(0.0, 10.0),
-                        blur: 28.0,
-                        spread: 0.0,
-                        color: Color32::from_black_alpha(50),
-                    })
-                    .inner_margin(Margin::same(22.0))
-                    .show(ui, |ui| {
+                modal_card_frame(&p, Margin::same(22.0)).show(ui, |ui| {
                         ui.set_width(size.x - 44.0);
                         ui.label(semibold("Delete VPN profile?", 17.0, p.on_surface));
                         ui.add_space(6.0);
@@ -771,9 +762,10 @@ impl eframe::App for KrakenApp {
         }
 
         self.sync_background_events();
+        let state = self.manager.state();
 
         if let Some(ref tray) = self.tray {
-            let tooltip = match self.manager.state() {
+            let tooltip = match &state {
                 TunnelState::Connected { profile_name, .. } => {
                     format!("Kraken VPN — Connected ({profile_name})")
                 }
@@ -794,7 +786,7 @@ impl eframe::App for KrakenApp {
             }
         }
 
-        let refresh = if self.manager.state().is_busy() || self.openconnect_test_rx.is_some() {
+        let refresh = if state.is_busy() || self.openconnect_test_rx.is_some() {
             Duration::from_millis(250)
         } else {
             Duration::from_secs(1)
@@ -851,7 +843,7 @@ impl eframe::App for KrakenApp {
                 });
         }
 
-        self.render_sidebar(ctx);
+        self.render_sidebar(ctx, &state);
 
         if let Some(ref toast) = self.toast {
             let (fill, fg) = if toast.is_error {
@@ -891,13 +883,13 @@ impl eframe::App for KrakenApp {
                         .id_salt(("main_content_scroll", self.active_tab as u8))
                         .auto_shrink([false, false])
                         .show(ui, |ui| match self.active_tab {
-                            NavTab::Home => dashboard::render(self, ui),
-                            NavTab::Monitoring => monitoring::render(self, ui),
-                            NavTab::Logs => diagnostics::render(self, ui),
+                            NavTab::Home => dashboard::render(self, ui, &state),
+                            NavTab::Monitoring => monitoring::render(self, ui, &state),
+                            NavTab::Logs => diagnostics::render(self, ui, &state),
                             NavTab::Settings => settings::render(self, ui, ctx),
                         });
                 } else {
-                    diagnostics::render(self, ui);
+                    diagnostics::render(self, ui, &state);
                 }
             });
 

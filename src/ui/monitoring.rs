@@ -1,31 +1,27 @@
 use chrono::Utc;
 use eframe::egui::{
-    self, Align2, Color32, FontId, Margin, Mesh, Pos2, Rect, RichText, Rounding, Sense, Shape,
-    Stroke, Vec2,
+    self, Align2, Color32, FontId, Margin, Mesh, Pos2, Rect, RichText, Sense, Shape, Stroke, Vec2,
 };
 
 use crate::telemetry::{format_bytes, format_duration, format_speed};
 use crate::ui::theme::{
-    card_frame, divider, page_container, secondary_button, semibold, table_card_frame, Palette,
+    card_frame, card_header_frame, divider, page_container, page_header, secondary_button,
+    semibold, table_card_frame, Palette,
 };
 use crate::ui::KrakenApp;
 use crate::vpn::state::TunnelState;
 
-pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
+pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, state: &TunnelState) {
     let p = app.palette();
-    let state = app.manager.state();
 
     page_container(ui, 920.0, |ui| {
         ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing.y = 2.0;
-                ui.label(semibold("Monitoring", 23.0, p.on_surface));
-                ui.label(
-                    RichText::new("Live tunnel bandwidth and session telemetry")
-                        .size(13.5)
-                        .color(p.on_surface_variant),
-                );
-            });
+            page_header(
+                ui,
+                &p,
+                "Monitoring",
+                "Live tunnel bandwidth and session telemetry",
+            );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if secondary_button(ui, &p, "Reset counters").clicked() {
                     app.manager.reset_telemetry_counters();
@@ -106,7 +102,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui) {
 
         ui.add_space(18.0);
 
-        render_tunnel_details_card(app, ui, &p, &state);
+        render_tunnel_details_card(app, ui, &p, state);
     });
 }
 
@@ -347,19 +343,10 @@ fn render_tunnel_details_card(
     table_card_frame(p).show(ui, |ui| {
         ui.set_width(ui.available_width());
 
-        egui::Frame::none()
-            .fill(p.surface_low)
-            .rounding(Rounding {
-                nw: 11.0,
-                ne: 11.0,
-                sw: 0.0,
-                se: 0.0,
-            })
-            .inner_margin(Margin::symmetric(20.0, 11.0))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.label(semibold("Tunnel details", 14.0, p.on_surface));
-            });
+        card_header_frame(p, Margin::symmetric(20.0, 11.0)).show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(semibold("Tunnel details", 14.0, p.on_surface));
+        });
         divider(ui, p);
 
         detail_pair_row(

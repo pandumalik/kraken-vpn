@@ -159,8 +159,7 @@ pub fn extract_servercert_pin(text: &str) -> Option<String> {
         .map(|m| format!("pin-sha256:{}", m.as_str()))
 }
 
-pub fn is_cert_prompt(text: &str) -> bool {
-    let lower = text.to_ascii_lowercase();
+fn is_cert_prompt_lower(lower: &str) -> bool {
     [
         "enter 'yes' to accept",
         "confirm certificate",
@@ -180,13 +179,11 @@ pub fn is_cert_prompt(text: &str) -> bool {
     .any(|needle| lower.contains(needle))
 }
 
-pub fn is_password_prompt(text: &str) -> bool {
-    let lower = text.to_ascii_lowercase();
+fn is_password_prompt_lower(lower: &str) -> bool {
     lower.contains("password:") || lower.contains("enter password")
 }
 
-pub fn is_connected_indicator(text: &str) -> bool {
-    let lower = text.to_ascii_lowercase();
+fn is_connected_indicator_lower(lower: &str) -> bool {
     [
         "connected as",
         "configured as",
@@ -205,6 +202,18 @@ pub fn is_connected_indicator(text: &str) -> bool {
     .any(|needle| lower.contains(needle))
 }
 
+pub fn is_cert_prompt(text: &str) -> bool {
+    is_cert_prompt_lower(&text.to_ascii_lowercase())
+}
+
+pub fn is_password_prompt(text: &str) -> bool {
+    is_password_prompt_lower(&text.to_ascii_lowercase())
+}
+
+pub fn is_connected_indicator(text: &str) -> bool {
+    is_connected_indicator_lower(&text.to_ascii_lowercase())
+}
+
 pub fn parse_openconnect_output(text: &str) -> Vec<OpenConnectEvent> {
     let mut events = Vec::new();
     let trimmed = text.trim();
@@ -215,17 +224,18 @@ pub fn parse_openconnect_output(text: &str) -> Vec<OpenConnectEvent> {
     if let Some(pin) = extract_servercert_pin(trimmed) {
         events.push(OpenConnectEvent::CertPin(pin));
     }
-    if is_connected_indicator(trimmed) {
+
+    let lower = trimmed.to_ascii_lowercase();
+    if is_connected_indicator_lower(&lower) {
         events.push(OpenConnectEvent::Connected);
     }
-    if is_cert_prompt(trimmed) {
+    if is_cert_prompt_lower(&lower) {
         events.push(OpenConnectEvent::CertPrompt);
     }
-    if is_password_prompt(trimmed) {
+    if is_password_prompt_lower(&lower) {
         events.push(OpenConnectEvent::PasswordPrompt);
     }
 
-    let lower = trimmed.to_ascii_lowercase();
     if lower.contains("authentication failed")
         || lower.contains("login failed")
         || lower.contains("failed to complete authentication")

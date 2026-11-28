@@ -1,9 +1,9 @@
-use eframe::egui::{self, Align2, Color32, Margin, Order, RichText, Rounding, Stroke, Vec2};
+use eframe::egui::{self, Align2, Margin, Order, RichText, Rounding, Stroke, Vec2};
 
 use crate::models::{OpenConnectProtocol, VpnProtocol};
 use crate::ui::theme::{
-    divider, pill_badge, primary_button, responsive_modal_size, row_secondary_button,
-    secondary_button, semibold, styled_text_edit, Palette, CONTROL_HEIGHT,
+    divider, modal_card_frame, pill_badge, primary_button, responsive_modal_size,
+    row_secondary_button, secondary_button, semibold, styled_text_edit, Palette, CONTROL_HEIGHT,
 };
 use crate::ui::{paint_backdrop, KrakenApp, ProfileFormState};
 
@@ -25,167 +25,152 @@ pub fn render_modal(app: &mut KrakenApp, ctx: &egui::Context) {
         .order(Order::Foreground)
         .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
         .show(ctx, |ui| {
-            egui::Frame::none()
-                .fill(p.surface_lowest)
-                .rounding(Rounding::same(12.0))
-                .stroke(Stroke::new(1.0_f32, p.outline_variant))
-                .shadow(egui::epaint::Shadow {
-                    offset: Vec2::new(0.0, 12.0),
-                    blur: 32.0,
-                    spread: 0.0,
-                    color: Color32::from_black_alpha(55),
-                })
-                .inner_margin(Margin::same(0.0))
-                .show(ui, |ui| {
-                    ui.set_width(modal_size.x);
+            modal_card_frame(&p, Margin::same(0.0)).show(ui, |ui| {
+                ui.set_width(modal_size.x);
 
-                    egui::Frame::none()
-                        .inner_margin(Margin::symmetric(22.0, 16.0))
-                        .show(ui, |ui| {
-                            ui.set_width(ui.available_width());
-                            ui.horizontal(|ui| {
-                                ui.vertical(|ui| {
-                                    ui.spacing_mut().item_spacing.y = 2.0;
-                                    let title = if app.profile_form.editing_id.is_some() {
-                                        "Edit VPN profile"
-                                    } else {
-                                        "Add VPN profile"
-                                    };
-                                    ui.label(semibold(title, 17.5, p.on_surface));
-                                    ui.label(
-                                        RichText::new(
-                                            "Configure an OpenVPN (.ovpn) or OpenConnect SSL gateway.",
-                                        )
-                                        .size(12.0)
-                                        .color(p.on_surface_variant),
-                                    );
-                                });
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::TOP),
-                                    |ui| {
-                                        let close_btn = egui::Button::new(
-                                            semibold("✕", 13.0, p.on_surface_variant),
-                                        )
+                egui::Frame::none()
+                    .inner_margin(Margin::symmetric(22.0, 16.0))
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.horizontal(|ui| {
+                            ui.vertical(|ui| {
+                                ui.spacing_mut().item_spacing.y = 2.0;
+                                let title = if app.profile_form.editing_id.is_some() {
+                                    "Edit VPN profile"
+                                } else {
+                                    "Add VPN profile"
+                                };
+                                ui.label(semibold(title, 17.5, p.on_surface));
+                                ui.label(
+                                    RichText::new(
+                                        "Configure an OpenVPN (.ovpn) or OpenConnect SSL gateway.",
+                                    )
+                                    .size(12.0)
+                                    .color(p.on_surface_variant),
+                                );
+                            });
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                                let close_btn =
+                                    egui::Button::new(semibold("✕", 13.0, p.on_surface_variant))
                                         .fill(p.surface_low)
                                         .stroke(Stroke::new(1.0_f32, p.outline_variant))
                                         .rounding(Rounding::same(7.0))
                                         .min_size(Vec2::splat(28.0));
-                                        if ui.add(close_btn).clicked() {
-                                            close_requested = true;
-                                        }
-                                    },
-                                );
+                                if ui.add(close_btn).clicked() {
+                                    close_requested = true;
+                                }
                             });
                         });
+                    });
 
-                    divider(ui, &p);
+                divider(ui, &p);
 
-                    let body_max_h = (modal_size.y - 138.0).max(160.0);
-                    egui::ScrollArea::vertical()
-                        .id_salt("profile_modal_body_scroll")
-                        .max_height(body_max_h)
-                        .auto_shrink([false, true])
-                        .show(ui, |ui| {
-                            egui::Frame::none()
-                                .inner_margin(Margin::symmetric(22.0, 16.0))
-                                .show(ui, |ui| {
-                                    let field_w = (modal_size.x - 44.0).max(220.0);
-                                    ui.set_width(field_w);
-                                    render_form_fields(app, ui, &p, field_w);
-                                });
-                        });
+                let body_max_h = (modal_size.y - 138.0).max(160.0);
+                egui::ScrollArea::vertical()
+                    .id_salt("profile_modal_body_scroll")
+                    .max_height(body_max_h)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        egui::Frame::none()
+                            .inner_margin(Margin::symmetric(22.0, 16.0))
+                            .show(ui, |ui| {
+                                let field_w = (modal_size.x - 44.0).max(220.0);
+                                ui.set_width(field_w);
+                                render_form_fields(app, ui, &p, field_w);
+                            });
+                    });
 
-                    divider(ui, &p);
+                divider(ui, &p);
 
-                    egui::Frame::none()
-                        .fill(p.surface_low)
-                        .rounding(Rounding {
-                            nw: 0.0,
-                            ne: 0.0,
-                            sw: 11.0,
-                            se: 11.0,
-                        })
-                        .inner_margin(Margin::symmetric(22.0, 13.0))
-                        .show(ui, |ui| {
-                            ui.set_width(ui.available_width());
-                            ui.horizontal(|ui| {
-                                if app.profile_form.protocol == VpnProtocol::OpenConnect {
-                                    let testing = app.openconnect_test_rx.is_some();
-                                    let label = if testing {
-                                        "Testing..."
-                                    } else {
-                                        "Test endpoint"
-                                    };
-                                    let btn = egui::Button::new(semibold(
-                                        label,
-                                        13.0,
-                                        if testing { p.outline } else { p.on_surface },
-                                    ))
-                                    .fill(p.surface_lowest)
-                                    .stroke(Stroke::new(1.0_f32, p.outline_variant))
-                                    .rounding(Rounding::same(8.0))
-                                    .min_size(Vec2::new(0.0, 34.0));
-                                    if ui.add_enabled(!testing, btn).clicked() {
+                egui::Frame::none()
+                    .fill(p.surface_low)
+                    .rounding(Rounding {
+                        nw: 0.0,
+                        ne: 0.0,
+                        sw: 11.0,
+                        se: 11.0,
+                    })
+                    .inner_margin(Margin::symmetric(22.0, 13.0))
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.horizontal(|ui| {
+                            if app.profile_form.protocol == VpnProtocol::OpenConnect {
+                                let testing = app.openconnect_test_rx.is_some();
+                                let label = if testing {
+                                    "Testing..."
+                                } else {
+                                    "Test endpoint"
+                                };
+                                let btn = egui::Button::new(semibold(
+                                    label,
+                                    13.0,
+                                    if testing { p.outline } else { p.on_surface },
+                                ))
+                                .fill(p.surface_lowest)
+                                .stroke(Stroke::new(1.0_f32, p.outline_variant))
+                                .rounding(Rounding::same(8.0))
+                                .min_size(Vec2::new(0.0, 34.0));
+                                if ui.add_enabled(!testing, btn).clicked() {
+                                    match app.profile_form.to_profile() {
+                                        Ok(prof) => {
+                                            app.profile_form.validation_error = None;
+                                            app.start_openconnect_test(prof);
+                                        }
+                                        Err(e) => {
+                                            app.profile_form.validation_error = Some(e);
+                                        }
+                                    }
+                                }
+                            }
+
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    if primary_button(ui, &p, "Save profile").clicked() {
                                         match app.profile_form.to_profile() {
-                                            Ok(prof) => {
-                                                app.profile_form.validation_error = None;
-                                                app.start_openconnect_test(prof);
+                                            Ok(mut new_prof) => {
+                                                if let Some(pos) = app
+                                                    .profiles
+                                                    .iter()
+                                                    .position(|x| x.id == new_prof.id)
+                                                {
+                                                    new_prof.created_at =
+                                                        app.profiles[pos].created_at;
+                                                    app.profiles[pos] = new_prof.clone();
+                                                    app.notify(
+                                                        format!(
+                                                            "Updated profile '{}'.",
+                                                            new_prof.name
+                                                        ),
+                                                        false,
+                                                    );
+                                                } else {
+                                                    app.profiles.push(new_prof.clone());
+                                                    app.notify(
+                                                        format!(
+                                                            "Saved profile '{}'.",
+                                                            new_prof.name
+                                                        ),
+                                                        false,
+                                                    );
+                                                }
+                                                app.save_profiles_to_disk();
+                                                app.profile_form = ProfileFormState::default();
+                                                close_requested = true;
                                             }
                                             Err(e) => {
                                                 app.profile_form.validation_error = Some(e);
                                             }
                                         }
                                     }
-                                }
-
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::Center),
-                                    |ui| {
-                                        if primary_button(ui, &p, "Save profile").clicked() {
-                                            match app.profile_form.to_profile() {
-                                                Ok(mut new_prof) => {
-                                                    if let Some(pos) = app
-                                                        .profiles
-                                                        .iter()
-                                                        .position(|x| x.id == new_prof.id)
-                                                    {
-                                                        new_prof.created_at =
-                                                            app.profiles[pos].created_at;
-                                                        app.profiles[pos] = new_prof.clone();
-                                                        app.notify(
-                                                            format!(
-                                                                "Updated profile '{}'.",
-                                                                new_prof.name
-                                                            ),
-                                                            false,
-                                                        );
-                                                    } else {
-                                                        app.profiles.push(new_prof.clone());
-                                                        app.notify(
-                                                            format!(
-                                                                "Saved profile '{}'.",
-                                                                new_prof.name
-                                                            ),
-                                                            false,
-                                                        );
-                                                    }
-                                                    app.save_profiles_to_disk();
-                                                    app.profile_form = ProfileFormState::default();
-                                                    close_requested = true;
-                                                }
-                                                Err(e) => {
-                                                    app.profile_form.validation_error = Some(e);
-                                                }
-                                            }
-                                        }
-                                        if secondary_button(ui, &p, "Cancel").clicked() {
-                                            close_requested = true;
-                                        }
-                                    },
-                                );
-                            });
+                                    if secondary_button(ui, &p, "Cancel").clicked() {
+                                        close_requested = true;
+                                    }
+                                },
+                            );
                         });
-                });
+                    });
+            });
         });
 
     if close_requested {

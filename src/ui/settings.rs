@@ -3,9 +3,9 @@ use eframe::egui::{self, Color32, Margin, Pos2, RichText, Rounding, Sense, Strok
 use crate::models::{AppSettings, ColorPreset, SwitchPolicy, ThemeMode};
 use crate::platform::{check_binary, BinaryCheckResult};
 use crate::ui::theme::{
-    active_theme_colors, destructive_button, divider, page_container, pill_badge, preset_colors,
-    row_secondary_button, semibold, short_binary_version, styled_text_edit, table_card_frame,
-    toggle_switch, Palette, CONTROL_HEIGHT,
+    active_theme_colors, card_header_frame, destructive_button, divider, page_container,
+    page_header, pill_badge, preset_colors, row_secondary_button, semibold, short_binary_version,
+    styled_text_edit, table_card_frame, toggle_switch, Palette, CONTROL_HEIGHT,
 };
 use crate::ui::KrakenApp;
 
@@ -14,17 +14,12 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
     let mut changed = false;
 
     page_container(ui, 820.0, |ui| {
-        ui.vertical(|ui| {
-            ui.spacing_mut().item_spacing.y = 2.0;
-            ui.label(semibold("Settings", 23.0, p.on_surface));
-            ui.label(
-                RichText::new(
-                    "Connection policy, VPN client executables, and application preferences",
-                )
-                .size(13.5)
-                .color(p.on_surface_variant),
-            );
-        });
+        page_header(
+            ui,
+            &p,
+            "Settings",
+            "Connection policy, VPN client executables, and application preferences",
+        );
 
         ui.add_space(20.0);
 
@@ -162,10 +157,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                         ThemeMode::Light => "Light",
                         ThemeMode::Dark => "Dark",
                     };
-                    let has_custom = match app.settings.theme {
-                        ThemeMode::Light => app.settings.custom_light_colors.is_some(),
-                        ThemeMode::Dark => app.settings.custom_dark_colors.is_some(),
-                    };
+                    let has_custom = app.settings.active_custom_colors().is_some();
                     let is_modified = app.settings.color_preset != ColorPreset::ForestSage
                         || app.settings.custom_light_colors.is_some()
                         || app.settings.custom_dark_colors.is_some();
@@ -225,10 +217,7 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                                     selected,
                                 ) {
                                     app.settings.color_preset = *preset;
-                                    match app.settings.theme {
-                                        ThemeMode::Light => app.settings.custom_light_colors = None,
-                                        ThemeMode::Dark => app.settings.custom_dark_colors = None,
-                                    }
+                                    *app.settings.active_custom_colors_mut() = None;
                                     changed = true;
                                 }
                             }
@@ -249,90 +238,28 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                                     ui.set_width(ui.available_width());
                                     ui.horizontal_wrapped(|ui| {
                                         ui.spacing_mut().item_spacing = Vec2::new(8.0, 6.0);
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Primary",
-                                            &mut colors.primary,
-                                            base.primary,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Secondary",
-                                            &mut colors.secondary,
-                                            base.secondary,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Background",
-                                            &mut colors.surface,
-                                            base.surface,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Card",
-                                            &mut colors.card,
-                                            base.card,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Border",
-                                            &mut colors.border,
-                                            base.border,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Text",
-                                            &mut colors.text,
-                                            base.text,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Muted",
-                                            &mut colors.text_muted,
-                                            base.text_muted,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Success",
-                                            &mut colors.success,
-                                            base.success,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Warning",
-                                            &mut colors.warning,
-                                            base.warning,
-                                        );
-                                        color_edited |= compact_color_chip(
-                                            ui,
-                                            &p,
-                                            "Error",
-                                            &mut colors.error,
-                                            base.error,
-                                        );
+                                        let fields: [(&str, &mut [u8; 3], [u8; 3]); 10] = [
+                                            ("Primary", &mut colors.primary, base.primary),
+                                            ("Secondary", &mut colors.secondary, base.secondary),
+                                            ("Background", &mut colors.surface, base.surface),
+                                            ("Card", &mut colors.card, base.card),
+                                            ("Border", &mut colors.border, base.border),
+                                            ("Text", &mut colors.text, base.text),
+                                            ("Muted", &mut colors.text_muted, base.text_muted),
+                                            ("Success", &mut colors.success, base.success),
+                                            ("Warning", &mut colors.warning, base.warning),
+                                            ("Error", &mut colors.error, base.error),
+                                        ];
+                                        for (label, value, orig) in fields {
+                                            color_edited |=
+                                                compact_color_chip(ui, &p, label, value, orig);
+                                        }
                                     });
                                 });
 
                             if color_edited {
-                                let matches_preset = colors == base;
-                                let next_val = if matches_preset { None } else { Some(colors) };
-                                match app.settings.theme {
-                                    ThemeMode::Light => {
-                                        app.settings.custom_light_colors = next_val;
-                                    }
-                                    ThemeMode::Dark => {
-                                        app.settings.custom_dark_colors = next_val;
-                                    }
-                                }
+                                *app.settings.active_custom_colors_mut() =
+                                    (colors != base).then_some(colors);
                                 changed = true;
                             }
                         }
@@ -426,19 +353,10 @@ fn section_card(p: &Palette, ui: &mut egui::Ui, title: &str, body: impl FnOnce(&
     table_card_frame(p).show(ui, |ui| {
         ui.set_min_width(card_w);
         ui.set_max_width(card_w);
-        egui::Frame::none()
-            .fill(p.surface_low)
-            .rounding(Rounding {
-                nw: 11.0,
-                ne: 11.0,
-                sw: 0.0,
-                se: 0.0,
-            })
-            .inner_margin(Margin::symmetric(20.0, 11.0))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.label(semibold(title, 13.5, p.on_surface));
-            });
+        card_header_frame(p, Margin::symmetric(20.0, 11.0)).show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(semibold(title, 13.5, p.on_surface));
+        });
         divider(ui, p);
         body(ui);
     });

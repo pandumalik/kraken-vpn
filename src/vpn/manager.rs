@@ -75,6 +75,7 @@ struct ManagerInner {
     state: TunnelState,
     active: Option<ActiveTunnel>,
     diagnostics: VecDeque<DiagnosticsLine>,
+    diagnostics_version: u64,
     pending_cert_prompt: Option<CertPinPrompt>,
     pending_history: Vec<ConnectionHistoryEntry>,
     auto_pinned_certs: Vec<(Uuid, String)>,
@@ -88,6 +89,7 @@ impl ManagerInner {
         }
         self.diagnostics
             .push_back(DiagnosticsLine::new(level, source, message));
+        self.diagnostics_version = self.diagnostics_version.wrapping_add(1);
     }
 
     fn record_history(&mut self, entry: ConnectionHistoryEntry) {
@@ -109,6 +111,7 @@ impl VpnManager {
                 state: TunnelState::Disconnected,
                 active: None,
                 diagnostics: VecDeque::with_capacity(MAX_DIAGNOSTICS_LINES),
+                diagnostics_version: 0,
                 pending_cert_prompt: None,
                 pending_history: Vec::new(),
                 auto_pinned_certs: Vec::new(),
@@ -123,6 +126,10 @@ impl VpnManager {
         self.inner.lock().unwrap().state.clone()
     }
 
+    pub fn diagnostics_version(&self) -> u64 {
+        self.inner.lock().unwrap().diagnostics_version
+    }
+
     pub fn diagnostics_snapshot(&self) -> Vec<DiagnosticsLine> {
         self.inner
             .lock()
@@ -134,7 +141,9 @@ impl VpnManager {
     }
 
     pub fn clear_diagnostics(&self) {
-        self.inner.lock().unwrap().diagnostics.clear();
+        let mut g = self.inner.lock().unwrap();
+        g.diagnostics.clear();
+        g.diagnostics_version = g.diagnostics_version.wrapping_add(1);
     }
 
     pub fn push_system_log(&self, level: LogLevel, message: impl Into<String>) {

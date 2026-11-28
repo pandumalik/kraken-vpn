@@ -337,6 +337,22 @@ fn default_true() -> bool {
     true
 }
 
+impl AppSettings {
+    pub fn active_custom_colors(&self) -> Option<CustomThemeColors> {
+        match self.theme {
+            ThemeMode::Light => self.custom_light_colors,
+            ThemeMode::Dark => self.custom_dark_colors,
+        }
+    }
+
+    pub fn active_custom_colors_mut(&mut self) -> &mut Option<CustomThemeColors> {
+        match self.theme {
+            ThemeMode::Light => &mut self.custom_light_colors,
+            ThemeMode::Dark => &mut self.custom_dark_colors,
+        }
+    }
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         #[cfg(windows)]
