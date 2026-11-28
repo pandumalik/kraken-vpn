@@ -23,6 +23,7 @@ use crate::ovpn::profile_from_ovpn;
 use crate::platform::{check_binary, is_elevated, relaunch_as_admin, BinaryCheckResult};
 use crate::store::ProfileStore;
 use crate::telemetry::{format_duration, TelemetrySnapshot};
+use crate::tray::TrayController;
 use crate::ui::theme::{
     apply_stitch_theme, destructive_button, divider, install_fonts, primary_button,
     responsive_modal_size, secondary_button, semibold, tunnel_status_style, Palette,
@@ -220,6 +221,9 @@ pub struct KrakenApp {
     pub openconnect_test_rx: Option<Receiver<OpenConnectTestResult>>,
     pub openconnect_test_result: Option<OpenConnectTestResult>,
     pub custom_colors_expanded: bool,
+    pub tray: Option<TrayController>,
+    pub last_tray_tooltip: String,
+    pub quit_requested: bool,
 }
 
 impl KrakenApp {
@@ -255,6 +259,7 @@ impl KrakenApp {
         let openconnect_check = Some(check_binary(&settings.openconnect_path));
 
         let manager = VpnManager::new(temp_dir);
+        let tray = TrayController::new(cc.egui_ctx.clone(), icon_png, manager.clone());
         manager.push_system_log(
             LogLevel::System,
             format!(
@@ -289,6 +294,9 @@ impl KrakenApp {
             openconnect_test_rx: None,
             openconnect_test_result: None,
             custom_colors_expanded: false,
+            tray,
+            last_tray_tooltip: "Kraken VPN".to_string(),
+            quit_requested: false,
         }
     }
 
@@ -745,7 +753,53 @@ impl KrakenApp {
 
 impl eframe::App for KrakenApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let quit_now = self.quit_requested
+            || self
+                .tray
+                .as_ref()
+                .is_some_and(TrayController::is_quit_requested);
+
+        // Intercept window close (X) and hide to system tray instead of killing the tunnel
+        if ctx.input(|i| i.viewport().close_requested())
+            && !quit_now
+            && self.settings.minimize_to_tray_on_close
+        {
+            if let Some(ref tray) = self.tray {
+                tray.capture_window_handle();
+                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+                return;
+            }
+        }
+
+        if let Some(ref tray) = self.tray {
+            tray.capture_window_handle();
+        }
+
         self.sync_background_events();
+
+        // Keep tray hover tooltip in sync with live tunnel state
+        if let Some(ref tray) = self.tray {
+            let tooltip = match self.manager.state() {
+                TunnelState::Connected { profile_name, .. } => {
+                    format!("Kraken VPN — Connected ({profile_name})")
+                }
+                TunnelState::Connecting { profile_name, .. } => {
+                    format!("Kraken VPN — Connecting ({profile_name})...")
+                }
+                TunnelState::Disconnecting { profile_name, .. } => {
+                    format!("Kraken VPN — Disconnecting ({profile_name})...")
+                }
+                TunnelState::Error { profile_name, .. } => {
+                    format!("Kraken VPN — Error ({profile_name})")
+                }
+                TunnelState::Disconnected => "Kraken VPN — Disconnected".to_string(),
+            };
+            if tooltip != self.last_tray_tooltip {
+                tray.set_tooltip(&tooltip);
+                self.last_tray_tooltip = tooltip;
+            }
+        }
 
         let refresh = if self.manager.state().is_busy() || self.openconnect_test_rx.is_some() {
             Duration::from_millis(250)
@@ -789,6 +843,10 @@ impl eframe::App for KrakenApp {
                             if ui.add(btn).clicked() {
                                 match relaunch_as_admin() {
                                     Ok(()) => {
+                                        self.quit_requested = true;
+                                        if let Some(ref tray) = self.tray {
+                                            tray.request_quit();
+                                        }
                                         self.manager
                                             .disconnect_sync("Relaunching as Administrator");
                                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
@@ -837,15 +895,21 @@ impl eframe::App for KrakenApp {
                     .inner_margin(Margin::symmetric(pad_x, pad_y)),
             )
             .show(ctx, |ui| {
-                egui::ScrollArea::vertical()
-                    .id_salt(("main_content_scroll", self.active_tab as u8))
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| match self.active_tab {
-                        NavTab::Home => dashboard::render(self, ui),
-                        NavTab::Monitoring => monitoring::render(self, ui),
-                        NavTab::Logs => diagnostics::render(self, ui),
-                        NavTab::Settings => settings::render(self, ui, ctx),
-                    });
+                let use_outer_scroll = !(self.active_tab == NavTab::Logs
+                    && self.diagnostics_subtab == diagnostics::DiagnosticsSubtab::Console);
+                if use_outer_scroll {
+                    egui::ScrollArea::vertical()
+                        .id_salt(("main_content_scroll", self.active_tab as u8))
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| match self.active_tab {
+                            NavTab::Home => dashboard::render(self, ui),
+                            NavTab::Monitoring => monitoring::render(self, ui),
+                            NavTab::Logs => diagnostics::render(self, ui),
+                            NavTab::Settings => settings::render(self, ui, ctx),
+                        });
+                } else {
+                    diagnostics::render(self, ui);
+                }
             });
 
         // Responsive modals layered cleanly above workspace
@@ -857,6 +921,7 @@ impl eframe::App for KrakenApp {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        self.tray = None;
         self.manager.disconnect_sync("Application closed");
         for entry in self.manager.take_pending_history() {
             let _ = self.store.append_history(entry);

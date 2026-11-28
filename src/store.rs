@@ -209,6 +209,7 @@ mod tests {
             custom_dark_colors: None,
             switch_policy: SwitchPolicy::RefuseWhileActive,
             auto_trust_server_cert: true,
+            minimize_to_tray_on_close: true,
         };
         store.save_settings(&settings).unwrap();
         assert_eq!(store.load_settings().unwrap(), settings);

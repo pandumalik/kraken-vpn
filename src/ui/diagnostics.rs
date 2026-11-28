@@ -265,10 +265,13 @@ fn render_console_terminal(
                 Stroke::new(1.0_f32, term_divider),
             );
 
+            let scroll_h = (ui.available_height() - 2.0).max(200.0);
+
             if filtered.is_empty() {
                 egui::Frame::none()
                     .inner_margin(Margin::symmetric(20.0, 34.0))
                     .show(ui, |ui| {
+                        ui.set_min_height((scroll_h - 68.0).max(120.0));
                         ui.vertical_centered(|ui| {
                             ui.label(
                                 RichText::new(if lines.is_empty() {
@@ -285,10 +288,11 @@ fn render_console_terminal(
                 return;
             }
 
-            let scroll_h = ui.available_height().clamp(340.0, 520.0);
             egui::ScrollArea::vertical()
                 .id_salt("stitch_logs_terminal_scroll")
+                .min_scrolled_height(scroll_h)
                 .max_height(scroll_h)
+                .auto_shrink([false, false])
                 .stick_to_bottom(app.console_auto_scroll)
                 .show(ui, |ui| {
                     egui::Frame::none()

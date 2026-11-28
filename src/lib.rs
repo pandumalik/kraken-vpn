@@ -4,5 +4,6 @@ pub mod platform;
 pub mod secrets;
 pub mod store;
 pub mod telemetry;
+pub mod tray;
 pub mod ui;
 pub mod vpn;

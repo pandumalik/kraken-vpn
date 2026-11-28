@@ -98,6 +98,7 @@ impl ManagerInner {
 }
 
 /// Manages at most ONE active VPN tunnel at any point in time.
+#[derive(Clone)]
 pub struct VpnManager {
     inner: Arc<Mutex<ManagerInner>>,
     job_guard: Arc<Option<ChildJobGuard>>,

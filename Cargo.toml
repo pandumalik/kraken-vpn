@@ -27,6 +27,7 @@ directories = "5.0"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
 regex = "1.11"
+tray-icon = "0.19"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = [

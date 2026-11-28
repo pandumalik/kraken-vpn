@@ -333,6 +333,13 @@ pub struct AppSettings {
     /// When true, detected `pin-sha256:...` pins are automatically saved and retried once.
     #[serde(default)]
     pub auto_trust_server_cert: bool,
+    /// When true (default), closing the window hides Kraken VPN to the system tray instead of exiting.
+    #[serde(default = "default_true")]
+    pub minimize_to_tray_on_close: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for AppSettings {
@@ -356,6 +363,7 @@ impl Default for AppSettings {
             custom_dark_colors: None,
             switch_policy: SwitchPolicy::AutoSwitch,
             auto_trust_server_cert: false,
+            minimize_to_tray_on_close: true,
         }
     }
 }

@@ -308,3 +308,93 @@ pub fn check_binary(configured: &str) -> BinaryCheckResult {
         },
     }
 }
+
+/// Finds the current process's primary visible top-level window handle (`HWND` as `isize`) on Windows.
+pub fn find_own_main_window() -> isize {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::Foundation::{BOOL, HWND, LPARAM};
+        use windows_sys::Win32::System::Threading::GetCurrentProcessId;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            EnumWindows, GetWindow, GetWindowThreadProcessId, IsWindowVisible, GW_OWNER,
+        };
+
+        struct SearchState {
+            pid: u32,
+            found: isize,
+        }
+
+        unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+            let state = &mut *(lparam as *mut SearchState);
+            let mut win_pid: u32 = 0;
+            GetWindowThreadProcessId(hwnd, &mut win_pid);
+            if win_pid == state.pid
+                && IsWindowVisible(hwnd) != 0
+                && GetWindow(hwnd, GW_OWNER).is_null()
+            {
+                state.found = hwnd as isize;
+                return 0; // stop enumeration
+            }
+            1
+        }
+
+        unsafe {
+            let mut state = SearchState {
+                pid: GetCurrentProcessId(),
+                found: 0,
+            };
+            EnumWindows(Some(enum_proc), (&mut state as *mut SearchState) as LPARAM);
+            state.found
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
+/// Restores and focuses a previously hidden/minimized window handle on Windows.
+pub fn restore_window(hwnd_raw: isize) {
+    #[cfg(windows)]
+    {
+        if hwnd_raw == 0 {
+            return;
+        }
+        use windows_sys::Win32::Foundation::HWND;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            IsIconic, SetForegroundWindow, ShowWindow, SW_RESTORE, SW_SHOW,
+        };
+        let hwnd = hwnd_raw as HWND;
+        unsafe {
+            ShowWindow(hwnd, SW_SHOW);
+            if IsIconic(hwnd) != 0 {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+            SetForegroundWindow(hwnd);
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = hwnd_raw;
+    }
+}
+
+/// Posts `WM_CLOSE` to the given Windows window handle so the app exits cleanly even if hidden.
+pub fn post_close_window(hwnd_raw: isize) {
+    #[cfg(windows)]
+    {
+        if hwnd_raw == 0 {
+            return;
+        }
+        use windows_sys::Win32::Foundation::HWND;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{PostMessageW, WM_CLOSE};
+        let hwnd = hwnd_raw as HWND;
+        unsafe {
+            PostMessageW(hwnd, WM_CLOSE, 0, 0);
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = hwnd_raw;
+    }
+}

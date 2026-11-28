@@ -56,6 +56,17 @@ pub fn render(app: &mut KrakenApp, ui: &mut egui::Ui, ctx: &egui::Context) {
                 &mut app.settings.auto_trust_server_cert,
                 &mut changed,
             );
+
+            divider(ui, &p);
+
+            setting_toggle_row(
+                ui,
+                &p,
+                "Keep running in system tray on close",
+                "Closing the window hides Kraken VPN to the system tray so active VPN tunnels stay connected. Use Quit in the tray menu to exit completely.",
+                &mut app.settings.minimize_to_tray_on_close,
+                &mut changed,
+            );
         });
 
         ui.add_space(16.0);
