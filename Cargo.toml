@@ -1,6 +1,6 @@
 [package]
 name = "kraken-vpn"
-version = "2.0.0"
+version = "2.0.1"
 edition = "2021"
 description = "Pure Rust multi-protocol desktop VPN manager for OpenVPN and OpenConnect"
 authors = ["Pandu Malik", "Kraken VPN Contributors"]
